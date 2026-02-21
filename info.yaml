@@ -1,6 +1,6 @@
 # Tiny Tapeout project information
 project:
-  title:        "tt_um_example_sillylad"      # Project title
+  title:        "TT Example RangeFinder"      # Project title
   author:       "sillylad"      # Your name
   discord:      ""      # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
   description:  "RangeFinder example module"      # One line description of what your project does
