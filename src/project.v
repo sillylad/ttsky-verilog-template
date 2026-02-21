@@ -33,10 +33,10 @@ endmodule
 
 module RangeFinder
    #(parameter WIDTH=8)
-    (input  logic [W-1:0] data_in,
+    (input  logic [WIDTH-1:0] data_in,
      input  logic             clock, reset,
      input  logic             go, finish,
-     output logic [W-1:0] range,
+     output logic [WIDTH-1:0] range,
      output logic             error);
 
 
