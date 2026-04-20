@@ -42,7 +42,7 @@ module vga
 
     localparam PW_POS_POLARITY = 0; // negative (0) for 640x480, pos for 800x600
 
-    logic [9:0] VS_count;
+    logic [19:0] VS_count;
     logic [10:0] HS_count;
 
     logic is_hs_pw, is_hs_bp, is_hs_disp, is_hs_fp;
@@ -95,23 +95,3 @@ module vga
     assign game_clk = prev_is_vs_disp & ~is_vs_disp;
 
 endmodule : vga
-
-// module vga_tb();
-
-//     logic clk_40, rst_n, HS, VS, blank;
-//     logic [9:0] row, col;
-//     vga dut (.*);
-
-//     initial begin
-//         clk_40 = 1'b0;
-//         rst_n = 1'b0;
-//         rst_n <= 1'b1;
-//         forever #5 clk_40 = ~clk_40;
-//     end
-
-//     initial begin
-//         #4000000;
-//     end
-
-
-// endmodule : vga_tb
