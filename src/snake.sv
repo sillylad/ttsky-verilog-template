@@ -98,7 +98,6 @@ module Snake (
     // Audio
 
     // Color
-    logic [3:0] debug_nc;
     Color_Gameboard cgb(.snake_data(snake_data),
                         .snake_length(snake_length),
                         .snake_valid(snake_valid),
