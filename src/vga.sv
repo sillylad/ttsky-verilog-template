@@ -9,38 +9,38 @@ module vga
     output logic game_clk);
 
     // timing parameters to use for 600x800 resolution
-    localparam NUM_ROWS = 600;
-    localparam NUM_COLS = 800;
-    localparam HS_SYNC  = 1056;
-    localparam HS_DISP  = 800;
-    localparam HS_PW    = 128;
-    localparam HS_FP    = 40;
-    localparam HS_BP    = 88;
+    // localparam NUM_ROWS = 600;
+    // localparam NUM_COLS = 800;
+    // localparam HS_SYNC  = 1056;
+    // localparam HS_DISP  = 800;
+    // localparam HS_PW    = 128;
+    // localparam HS_FP    = 40;
+    // localparam HS_BP    = 88;
 
-    localparam VS_SYNC = 628;
-    localparam VS_DISP = 600;
-    localparam VS_PW   = 4;
-    localparam VS_FP   = 1;
-    localparam VS_BP   = 23;
+    // localparam VS_SYNC = 628;
+    // localparam VS_DISP = 600;
+    // localparam VS_PW   = 4;
+    // localparam VS_FP   = 1;
+    // localparam VS_BP   = 23;
 
-    localparam PW_POS_POLARITY = 1; // negative (0) for 640x480, pos for 800x600
+    // localparam PW_POS_POLARITY = 1; // negative (0) for 640x480, pos for 800x600
 
     // parameters for 640x480 resolution
-    // localparam NUM_ROWS = 480;
-    // localparam NUM_COLS = 640;
-    // localparam HS_SYNC  = 800;
-    // localparam HS_DISP  = 640;
-    // localparam HS_PW    = 96;
-    // localparam HS_FP    = 16;
-    // localparam HS_BP    = 48;
+    localparam NUM_ROWS = 480;
+    localparam NUM_COLS = 640;
+    localparam HS_SYNC  = 800;
+    localparam HS_DISP  = 640;
+    localparam HS_PW    = 96;
+    localparam HS_FP    = 16;
+    localparam HS_BP    = 48;
 
-    // localparam VS_SYNC = 525;
-    // localparam VS_DISP = 480;
-    // localparam VS_PW   = 2;
-    // localparam VS_FP   = 10;
-    // localparam VS_BP   = 33;
+    localparam VS_SYNC = 525;
+    localparam VS_DISP = 480;
+    localparam VS_PW   = 2;
+    localparam VS_FP   = 10;
+    localparam VS_BP   = 33;
 
-    // localparam PW_POS_POLARITY = 0; // negative (0) for 640x480, pos for 800x600
+    localparam PW_POS_POLARITY = 0; // negative (0) for 640x480, pos for 800x600
 
     logic [19:0] VS_count;
     logic [10:0] HS_count;
