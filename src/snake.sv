@@ -60,6 +60,8 @@ module Snake (
             snake_enable <= (start_game) ? ~snake_enable : snake_enable;
         end
     end
+
+    logic [5:0] new_head;
     // assign snake_enable = 1'b1;
     assign grow = (new_head == fruit_pos);
     // collision when new_head wraps around the board one way or another
@@ -183,8 +185,6 @@ module Snake_Register (
             end
         end
     endtask
-
-    logic [5:0] new_head;
 
     always_comb begin
         unique case(curr_dir)
