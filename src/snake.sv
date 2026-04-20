@@ -480,7 +480,7 @@ module Color_Gameboard(
     assign display_snake = |in_snake;
 
     // snake_style_t curr_style;
-    // convert one-hot in_snake to index
+    // convert one-hot in_snake to index to find which snake tile number is being displayed
     logic [5:0] curr_snake_idx;
     always_comb begin
         curr_snake_idx = '0;
@@ -496,8 +496,29 @@ module Color_Gameboard(
     logic display_fruit;
     assign display_fruit = (tile_row == fruit_pos[5:3]) && (tile_col == fruit_pos[2:0]);
 
-    logic [11:0] snake_color;
-    assign snake_color = {4'h0, 4'hf, 4'h0};
+    logic [11:0] snake_color, fruit_color;
+    
+    logic [5:0][11:0] colors;
+    assign colors[0] = {4'hf, 4'h0, 4'h0}; // red 
+    assign colors[1] = {4'hf, 4'h2, 4'h0}; // orange
+    assign colors[2] = {4'hf, 4'hf, 4'h0}; // yellow
+    assign colors[3] = {4'h0, 4'hf, 4'h1}; // green
+    assign colors[4] = {4'h0, 4'h4, 4'hf}; // blue
+    assign colors[5] = {4'h2, 4'h0, 4'hf}; // violet
+
+
+    logic [2:0] color_idx;
+    logic [5:0] res48, res24, res12, res6;
+    // subtract tree to do % 6
+    always_comb begin
+        res48 = (curr_snake_idx >= 6'd48) ? curr_snake_idx - 6'd48 : curr_snake_idx;
+        res24 = (res48 >= 6'd24) ? res48 - 6'd24 : res48;
+        res12 = (res24 >= 6'd12) ? res24 - 6'd12 : res24;
+        res6 = (res12 >= 6'd6) ? res12 - 6'd6 : res12;
+    end
+
+    assign snake_color = colors[res6[2:0]];
+    assign fruit_color = {4'hf, 4'hf, 4'hf}; // SNAKE EATS EGG
 
     always_comb begin
         // default black background
@@ -510,9 +531,10 @@ module Color_Gameboard(
         else if(vga_in_grid) begin
             // just green snake for now
             if(display_snake) begin
-                VGA_R = '0;
-                VGA_G = '1;
-                VGA_B = '0;
+                {VGA_R, VGA_G, VGA_B} = snake_color;
+                // VGA_R = '0;
+                // VGA_G = '1;
+                // VGA_B = '0;
                 // case (curr_style)
                 //     UP_RIGHT: {VGA_R, VGA_G, VGA_B} = (RGB_UP_RIGHT) ? snake_color : '0;
                 //     UP_LEFT: {VGA_R, VGA_G, VGA_B} = (RGB_UP_LEFT) ? snake_color : '0;
@@ -534,9 +556,7 @@ module Color_Gameboard(
             end
 
             else if(display_fruit) begin
-                VGA_R = '1;
-                VGA_G = '0;
-                VGA_B = '0;
+                {VGA_R, VGA_G, VGA_B} = fruit_color;
             end
         end
         // black background
