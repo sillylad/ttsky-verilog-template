@@ -65,7 +65,7 @@ module Snake (
     // assign snake_enable = 1'b1;
     assign grow = (new_head == fruit_pos);
     // collision when new_head wraps around the board one way or another
-    assign collision = (
+    // assign collision = (
     // Stores the current snake data and updates the snake position as needed
     // Output snake_data array for use by other blocks
     Snake_Register sreg (.clk(clk), .rst_n(rst_n), .game_clk(game_clk),
