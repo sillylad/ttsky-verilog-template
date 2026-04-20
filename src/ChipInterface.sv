@@ -42,7 +42,7 @@ module ChipInterface (
     logic is_snake;
 
     // Drive VGA timing signals
-    vga vga_800_600 (.clk(clk_40), .rst_n(rst_n), .HS(VGA_HS), .VS(VGA_VS),
+    vga vga_640_480 (.clk(clk_40), .rst_n(rst_n), .HS(VGA_HS), .VS(VGA_VS),
                     .blank(blank), .row(row), .col(col), .game_clk(clk_60HZ));
 
                 

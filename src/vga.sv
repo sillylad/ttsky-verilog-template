@@ -42,7 +42,7 @@ module vga
 
     localparam PW_POS_POLARITY = 0; // negative (0) for 640x480, pos for 800x600
 
-    logic [19:0] VS_count;
+    logic [9:0] VS_count;
     logic [10:0] HS_count;
 
     logic is_hs_pw, is_hs_bp, is_hs_disp, is_hs_fp;
