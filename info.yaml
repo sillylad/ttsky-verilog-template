@@ -3,9 +3,9 @@ project:
   title:        "TT Example RangeFinder"      # Project title
   author:       "sillylad"      # Your name
   discord:      ""      # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
-  description:  "RangeFinder example module"      # One line description of what your project does
+  description:  "snake test module"      # One line description of what your project does
   language:     "SystemVerilog" # other examples include SystemVerilog, Amaranth, VHDL, etc
-  clock_hz:     0       # Clock frequency in Hz (or 0 if not applicable)
+  clock_hz:     40       # Clock frequency in Hz (or 0 if not applicable)
   wokwi_id:     0
 
   # How many tiles your design occupies? A single tile is about 167x108 uM.
@@ -18,7 +18,9 @@ project:
   # Source files must be in ./src and you must list each source file separately, one per line.
   # Don't forget to also update `PROJECT_SOURCES` in test/Makefile.
   source_files:
-    - "project.v"
+    - "snake_project.v"
+    - "ChipInterface.sv"
+    - "snake.sv"
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 # This section is for the datasheet/website. Use descriptive names (e.g., RX, TX, MOSI, SCL, SEG_A, etc.).
