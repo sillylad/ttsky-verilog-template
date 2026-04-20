@@ -49,8 +49,6 @@ module Snake (
     logic [63:0][5:0] snake_data;
     logic [63:0] snake_valid;
     logic snake_init, grow, snake_enable, collision;
-    logic [6:0] snake_length;
-    logic [5:0] new_head;
 
     assign snake_init = 1'b0;
     
@@ -99,7 +97,6 @@ module Snake (
     // Audio
 
     // Color
-    logic [3:0] debug_nc;
     Color_Gameboard cgb(.snake_data(snake_data),
                         .snake_length(snake_length),
                         .snake_valid(snake_valid),
