@@ -197,20 +197,20 @@ module Snake_Register (
         snake_length <= 7'd3;
 
         // Initial snake shift register = horizontal snake facing left
-        for(int i = 0; i < 64; i++) begin
+        for(int m = 0; m < 64; m++) begin
             // set the initial head of the snake
-            if(i == 0) begin
-                snake_data[i] <= {3'd3, 3'd3};
+            if(m == 0) begin
+                snake_data[m] <= {3'd3, 3'd3};
             end
-            else if(i == 1) begin
-                snake_data[i] <= {3'd3, 3'd2};
+            else if(m == 1) begin
+                snake_data[m] <= {3'd3, 3'd2};
             end
             // set the initial tail of the snake
-            else if(i == 2) begin
-                snake_data[i] <= {3'd3, 3'd1};
+            else if(m == 2) begin
+                snake_data[m] <= {3'd3, 3'd1};
             end
             else begin
-                snake_data[i] <= '0;
+                snake_data[m] <= '0;
             end
         end
     endtask
@@ -265,8 +265,8 @@ module Snake_Register (
             else if(snake_enable) begin
                 snake_length <= grow ? snake_length + 7'd1 : snake_length;
                 // Update tiles
-                for(int i = 63; i > 0; i--) begin
-                    snake_data[i] <= snake_data[i-1];
+                for(int j = 63; j > 0; j--) begin
+                    snake_data[j] <= snake_data[j-1];
                 end
                 snake_data[0] <= new_head;
             end
@@ -428,9 +428,9 @@ module Color_Gameboard(
     logic [5:0] curr_snake_idx;
     always_comb begin
         curr_snake_idx = '0;
-        for(int i = 0; i < 64; i++) begin
-            if(in_snake[i]) begin
-                curr_snake_idx = i[5:0];
+        for(int k = 0; k < 64; k++) begin
+            if(in_snake[k]) begin
+                curr_snake_idx = k[5:0];
             end
         end
     end
