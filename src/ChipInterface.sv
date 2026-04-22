@@ -77,16 +77,6 @@ module ChipInterface (
     // vga_test_pattern vtp(.row(row), .col(col), .rgb(rgb));
     assign rgb = {VGA_R[1:0], VGA_G[1:0], VGA_B[1:0]};
     assign {R1, R0, G1, G0, B1, B0} = (~blank) ? rgb : '0;
-    
-    // assign led = {R1, R0, G1, G0, B1, B0};
-    // assign led = curr_dir;
-
-    // logic [5:0] frame_count;
-    // always_ff @(posedge clk, negedge rst_n) begin
-    //     if(~rst_n) frame_count <= '0;
-    //     else if(game_clk) frame_count <= frame_count + 1;
-    // end
-    // assign led = frame_count;
 
     assign led = {debug_nc, 1'b0, head_pos[2:0]};
 
