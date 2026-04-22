@@ -34,7 +34,6 @@ module ChipInterface (
     logic [7:0] VGA_R, VGA_G, VGA_B;
     logic blank;
     logic game_clk, clk_60HZ;
-    logic buzz;
     logic [1:0] curr_dir;
     logic [6:0] snake_length;
     logic [5:0] head_pos;
@@ -68,7 +67,7 @@ module ChipInterface (
     Snake snek (.clk(clk_40), .rst_n(rst_n), .game_clk(game_clk),
                 .start_game(start_game), .dir(dir),
                 .row(row), .col(col), .VGA_R(VGA_R), .VGA_G(VGA_G), .VGA_B(VGA_B),
-                .buzz(buzz), .curr_dir(curr_dir), .snake_length(snake_length),
+                .curr_dir(curr_dir), .snake_length(snake_length),
                 .head_pos(head_pos), .is_snake(is_snake), .debug_nc(debug_nc));
 
     // generate test pattern

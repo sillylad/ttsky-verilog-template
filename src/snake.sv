@@ -19,7 +19,6 @@ module Snake (
     input logic [3:0] dir,
     input logic [9:0] row, col,
     output logic [3:0] VGA_R, VGA_G, VGA_B,
-    output logic buzz,
     output snake_move curr_dir,
     output logic [6:0] snake_length,
     output logic [5:0] head_pos,
@@ -27,7 +26,6 @@ module Snake (
     output logic [3:0] debug_nc
 );
 
-    assign buzz = 1'b1;
     // snake is moving always so dir should be sticky
     logic [3:0] sticky_dir;
     always_ff @(posedge clk, negedge rst_n) begin
