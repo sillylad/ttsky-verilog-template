@@ -7,17 +7,12 @@ module ChipInterface (
     output logic [7:0] led
 );
 
-    // 40Mhz needed for 800x600
-    logic pll_locked, clk_40;
-
-    // pll40M c40 (.clk_25(clk), .clk_40(clk_40), .locked(pll_locked));
-    assign clk_40 = clk;
     // synchronize buttons
     logic tmp_btn, rst_n;
     logic [3:0] tmp_dir, dir;
     logic tmp_start_game, start_game;
 
-    always_ff @(posedge clk_40) begin
+    always_ff @(posedge clk) begin
         tmp_btn <= btn[0];        
         rst_n <= tmp_btn;
 
@@ -31,28 +26,24 @@ module ChipInterface (
     // VGA for driving display
     logic [9:0] col;
     logic [9:0] row;
-    logic [7:0] VGA_R, VGA_G, VGA_B;
+    logic [3:0] VGA_R, VGA_G, VGA_B;
     logic blank;
     logic game_clk, clk_60HZ;
-    logic [1:0] curr_dir;
-    logic [6:0] snake_length;
-    logic [5:0] head_pos;
-    logic is_snake;
 
     // Drive VGA timing signals
-    vga vga_800_600 (.clk(clk_40), .rst_n(rst_n), .HS(VGA_HS), .VS(VGA_VS),
+    vga vga_800_600 (.clk(clk), .rst_n(rst_n), .HS(VGA_HS), .VS(VGA_VS),
                     .blank(blank), .row(row), .col(col), .game_clk(clk_60HZ));
 
                 
     // divide 60hz game clock so it's not so ZOOMIN'
     // every 30 frames -> 2 hz refresh rate
     logic [2:0] frame_cnt;
-    always_ff @(posedge clk_40, negedge rst_n) begin
+    always_ff @(posedge clk, negedge rst_n) begin
         if(~rst_n) begin
             frame_cnt <= '0;
         end
         else if(clk_60HZ) begin
-            frame_cnt <= (frame_cnt == 3'd7) ? '0 : frame_cnt + 1'b1;
+            frame_cnt <= frame_cnt + 1'b1;
         end
         else begin
             frame_cnt <= frame_cnt;
@@ -63,17 +54,15 @@ module ChipInterface (
 
 
     // Module handling all the snake game logic and coloring
-    Snake snek (.clk(clk_40), .rst_n(rst_n), .game_clk(game_clk),
+    Snake snek (.clk(clk), .rst_n(rst_n), .game_clk(game_clk),
                 .start_game(start_game), .dir(dir),
-                .row(row), .col(col), .VGA_R(VGA_R), .VGA_G(VGA_G), .VGA_B(VGA_B),
-                .curr_dir(curr_dir), .snake_length(snake_length),
-                .head_pos(head_pos), .is_snake(is_snake));
+                .row(row), .col(col), .VGA_R(VGA_R), .VGA_G(VGA_G), .VGA_B(VGA_B));
 
     logic [5:0] rgb;
 
     assign rgb = {VGA_R[1:0], VGA_G[1:0], VGA_B[1:0]};
     assign {R1, R0, G1, G0, B1, B0} = (~blank) ? rgb : '0;
 
-    assign led = {4'b0, 1'b0, head_pos[2:0]};
+    assign led = '0;
 
 endmodule : ChipInterface
