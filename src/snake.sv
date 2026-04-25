@@ -305,8 +305,7 @@ module PRNG (
     input logic [MAX_SNAKE_SIZE - 1:0][5:0] snake_data,
     input logic [MAX_SNAKE_SIZE - 1:0] snake_valid,
     input logic grow,
-    output logic [5:0] fruit_pos,
-    output logic grow_posedge
+    output logic [5:0] fruit_pos
 );
 
     logic valid_fruit, shift, get_new_pos, grow_prev, grow_posedge;
