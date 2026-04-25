@@ -46,13 +46,13 @@ module ChipInterface (
                 
     // divide 60hz game clock so it's not so ZOOMIN'
     // every 30 frames -> 2 hz refresh rate
-    logic [4:0] frame_cnt;
+    logic [2:0] frame_cnt;
     always_ff @(posedge clk_40, negedge rst_n) begin
         if(~rst_n) begin
             frame_cnt <= '0;
         end
         else if(clk_60HZ) begin
-            frame_cnt <= (frame_cnt == 5'd9) ? '0 : frame_cnt + 1'b1;
+            frame_cnt <= (frame_cnt == 3'd7) ? '0 : frame_cnt + 1'b1;
         end
         else begin
             frame_cnt <= frame_cnt;
