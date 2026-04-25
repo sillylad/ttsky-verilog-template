@@ -423,27 +423,28 @@ endmodule : BCD_to_SS
 module VGA_Segment_Check(
     input logic [9:0] row, col,
     input logic [9:0] x_offset,
+    input logic top_row, middle_row, bottom_row, top_half, bottom_half,
     output logic [6:0] ss_out
 );
 
     logic left_lane, right_lane, middle_lane;
-    logic top_row, middle_row, bottom_row, top_half, bottom_half;
+    // logic top_row, middle_row, bottom_row, top_half, bottom_half;
     logic in_score_box;
 
-    logic [9:0] x_pos, y_pos;
+    logic [9:0] x_pos;
+    // logic [9:0] y_pos;
 
     assign x_pos = col - x_offset;
-    assign y_pos = row - 10'd144;
 
     assign left_lane = (x_pos < 10'd8);
     assign right_lane = (x_pos >= 10'd72) & (x_pos < 10'd80);
     assign middle_lane = (x_pos >= 10'd8) & (x_pos < 10'd72);
 
-    assign top_row = (y_pos < 10'd8);
-    assign middle_row = (y_pos >= 10'd92) & (y_pos < 10'd100);
-    assign bottom_row = (y_pos >= 10'd184) & (y_pos < 10'd192);
-    assign top_half = (y_pos < 10'd100);
-    assign bottom_half = (y_pos >= 10'd92);
+    // assign top_row = (y_pos < 10'd8);
+    // assign middle_row = (y_pos >= 10'd92) & (y_pos < 10'd100);
+    // assign bottom_row = (y_pos >= 10'd184) & (y_pos < 10'd192);
+    // assign top_half = (y_pos < 10'd100);
+    // assign bottom_half = (y_pos >= 10'd92);
 
     logic [6:0] ss_out_init;
 
@@ -482,10 +483,19 @@ module Score_Color(
     BCD_to_SS bts_high_lsd (.value(high_score[3:0]), .ss_value(high_ss_lsd));
     BCD_to_SS bts_high_msd (.value(high_score[7:4]), .ss_value(high_ss_msd));
 
-    VGA_Segment_Check vsc_c_l (.row(row), .col(col), .x_offset(10'd552), .ss_out(disp_curr_ss_lsd));
-    VGA_Segment_Check vsc_c_m (.row(row), .col(col), .x_offset(10'd456), .ss_out(disp_curr_ss_msd));
-    VGA_Segment_Check vsc_h_l (.row(row), .col(col), .x_offset(10'd104), .ss_out(disp_high_ss_lsd));
-    VGA_Segment_Check vsc_h_m (.row(row), .col(col), .x_offset(10'd8), .ss_out(disp_high_ss_msd));
+    logic top_row, middle_row, bottom_row, top_half, bottom_half;
+    logic [9:0] y_pos;
+    assign y_pos = row - 10'd144;
+    assign top_row = (y_pos < 10'd8);
+    assign middle_row = (y_pos >= 10'd92) & (y_pos < 10'd100);
+    assign bottom_row = (y_pos >= 10'd184) & (y_pos < 10'd192);
+    assign top_half = (y_pos < 10'd100);
+    assign bottom_half = (y_pos >= 10'd92);
+
+    VGA_Segment_Check vsc_c_l (.row(row), .col(col), .x_offset(10'd552), .ss_out(disp_curr_ss_lsd), .*);
+    VGA_Segment_Check vsc_c_m (.row(row), .col(col), .x_offset(10'd456), .ss_out(disp_curr_ss_msd), .*);
+    VGA_Segment_Check vsc_h_l (.row(row), .col(col), .x_offset(10'd104), .ss_out(disp_high_ss_lsd), .*);
+    VGA_Segment_Check vsc_h_m (.row(row), .col(col), .x_offset(10'd8), .ss_out(disp_high_ss_msd), .*);
 
     logic is_curr_score_lsd, is_curr_score_msd, is_high_score_lsd, is_high_score_msd;
 
@@ -556,12 +566,12 @@ module Color_Gameboard(
     assign display_snake = |in_snake;
 
     // convert one-hot in_snake to index to find which snake tile number is being displayed
-    logic [5:0] curr_snake_idx;
+    logic [$clog2(MAX_SNAKE_SIZE) - 1:0] curr_snake_idx;
     always_comb begin
         curr_snake_idx = '0;
         for(int k = 0; k < MAX_SNAKE_SIZE; k++) begin
             if(in_snake[k]) begin
-                curr_snake_idx = k[5:0];
+                curr_snake_idx = k[$clog2(MAX_SNAKE_SIZE) - 1:0];
             end
         end
     end
@@ -580,13 +590,13 @@ module Color_Gameboard(
     assign colors[5] = {4'h2, 4'h0, 4'hf}; // violet
 
 
-    logic [5:0] res48, res24, res12, res6;
+    // make sure MAX_SNAKE_SIZE <= 32
+    logic [4:0] res24, res12, res6;
     // subtract tree to do % 6
     always_comb begin
-        res48 = (curr_snake_idx >= 6'd48) ? curr_snake_idx - 6'd48 : curr_snake_idx;
-        res24 = (res48 >= 6'd24) ? res48 - 6'd24 : res48;
-        res12 = (res24 >= 6'd12) ? res24 - 6'd12 : res24;
-        res6 = (res12 >= 6'd6) ? res12 - 6'd6 : res12;
+        res24 = (curr_snake_idx >= 5'd24) ? curr_snake_idx - 5'd24 : curr_snake_idx;
+        res12 = (res24 >= 5'd12) ? res24 - 5'd12 : res24;
+        res6 = (res12 >= 5'd6) ? res12 - 5'd6 : res12;
     end
 
     assign snake_color = colors[res6[2:0]];
@@ -620,80 +630,3 @@ module Color_Gameboard(
     end
 
 endmodule : Color_Gameboard
-
-// // Logic for getting the snake styles right (color is handled in Color_Gameboard
-// // still, this is just for deciding between snake body color vs. black background)
-// module Snake_Tiles(
-//     input logic [9:0] game_row, game_col,
-//     input logic [2:0] tile_row, tile_col,
-//     output logic RGB_UP_RIGHT, RGB_UP_LEFT, RGB_DOWN_RIGHT, RGB_DOWN_LEFT,
-//                  RGB_UP_TAIL, RGB_LEFT_TAIL, RGB_RIGHT_TAIL, RGB_DOWN_TAIL,
-//                  RGB_UP_HEAD, RGB_LEFT_HEAD, RGB_RIGHT_HEAD, RGB_DOWN_HEAD,
-//                  RGB_UP_DOWN, RGB_LEFT_RIGHT
-// );
-
-//     logic [5:0] pixel_row, pixel_col;
-
-//     // map global grid coordinate to just one tile's pixels
-//     // (pixel_row, pixel_col) is in [0, MAX_SNAKE_SIZE - 1] x [0, MAX_SNAKE_SIZE - 1]
-//     assign pixel_row = game_row - (tile_row << 10'd5);
-//     assign pixel_col = game_col - (tile_col << 10'd5);
-
-//     logic row_in_center, col_in_center;
-//     assign row_in_center = (6'd4 <= pixel_row) & (pixel_row <= 6'd27);
-//     assign col_in_center = (6'd4 <= pixel_col) & (pixel_col <= 6'd27);
-
-//     logic row_in_top, row_in_bottom, col_in_left, col_in_right;
-//     assign row_in_top = (pixel_row <= 6'd3);
-//     assign row_in_bottom = (6'd28 <= pixel_row) & (pixel_row <= 6'd31);
-//     assign col_in_left = (pixel_col <= 6'd3);
-//     assign col_in_right = (6'd28 <= pixel_col) & (pixel_col <= 6'd31);
-//     // most snake tiles have the middle 48x48 pixels filled with snake (except
-//     // head cuz of the eyes)
-//     logic center_square;
-//     assign center_square = row_in_center & col_in_center;
-
-//     logic top_seg, bottom_seg, left_seg, right_seg;
-//     assign top_seg = (row_in_top & col_in_center);
-//     assign bottom_seg = (row_in_bottom & col_in_center);
-//     assign left_seg = (col_in_left & row_in_center);
-//     assign right_seg = (col_in_right & row_in_center);
-
-//     logic top_eye_lane, bottom_eye_lane, left_eye_lane, right_eye_lane;
-//     assign top_eye_lane = (pixel_row >= 6'd8) & (pixel_row <= 6'd11);
-//     assign bottom_eye_lane = (pixel_row >= 6'd20) & (pixel_row <= 6'd23);
-//     assign left_eye_lane = (pixel_col >= 6'd8) & (pixel_col <= 6'd11);
-//     assign right_eye_lane = (pixel_col >= 6'd20) & (pixel_col <= 6'd23);
-
-//     logic top_left_eye, top_right_eye, bottom_left_eye, bottom_right_eye;
-//     assign top_left_eye = top_eye_lane & left_eye_lane;
-//     assign top_right_eye = top_eye_lane & right_eye_lane;
-//     assign bottom_left_eye = bottom_eye_lane & left_eye_lane;
-//     assign bottom_right_eye = bottom_eye_lane & right_eye_lane;
-
-//     logic up_head_eyes, left_head_eyes, right_head_eyes, down_head_eyes;
-//     assign up_head_eyes = (bottom_left_eye | bottom_right_eye);
-//     assign left_head_eyes = (top_right_eye | bottom_right_eye);
-//     assign right_head_eyes = (top_left_eye | bottom_left_eye);
-//     assign down_head_eyes = (top_left_eye | top_right_eye);
-
-
-//     assign RGB_UP_RIGHT   = center_square | top_seg | right_seg;
-//     assign RGB_UP_LEFT    = center_square | top_seg | left_seg;
-//     assign RGB_DOWN_RIGHT = center_square | bottom_seg | right_seg;
-//     assign RGB_DOWN_LEFT  = center_square | bottom_seg | left_seg;
-
-//     assign RGB_UP_TAIL    = center_square | top_seg;
-//     assign RGB_LEFT_TAIL  = center_square | left_seg;
-//     assign RGB_RIGHT_TAIL = center_square | right_seg;
-//     assign RGB_DOWN_TAIL  = center_square | bottom_seg;
-
-//     assign RGB_UP_HEAD    = top_seg | (center_square & ~up_head_eyes);
-//     assign RGB_LEFT_HEAD  = left_seg | (center_square & ~left_head_eyes);
-//     assign RGB_RIGHT_HEAD = right_seg | (center_square & ~right_head_eyes);
-//     assign RGB_DOWN_HEAD  = bottom_seg | (center_square & ~down_head_eyes);
-
-//     assign RGB_UP_DOWN    = center_square | top_seg | bottom_seg;
-//     assign RGB_LEFT_RIGHT = center_square | left_seg | right_seg;
-
-// endmodule : Snake_Tiles
