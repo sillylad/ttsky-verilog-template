@@ -102,7 +102,7 @@ module Snake (
     logic grow_posedge;
     PRNG fruit_gen (.clk(clk), .game_clk(game_clk), .rst_n(rst_n),
                     .snake_data(snake_data), .snake_valid(snake_valid),
-                    .grow(grow), .fruit_pos(fruit_pos), .grow_posedge(grow_posedge));
+                    .grow(grow), .fruit_pos(fruit_pos));
 
     // Scoring
     // Snake can continue to play after MAX_SNAKE_SIZE is reached, so score widths
