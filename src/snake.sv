@@ -11,7 +11,9 @@ typedef enum logic [3:0]   {UP_RIGHT, UP_LEFT, DOWN_RIGHT, DOWN_LEFT,
 
 typedef enum logic [1:0] {MOVE_UP, MOVE_LEFT, MOVE_RIGHT, MOVE_DOWN} snake_move;
 
-localparam MAX_SNAKE_SIZE = 32;
+localparam MAX_SNAKE_SIZE = 12;
+localparam MAX_SNAKE_SIZE_BCD = 8'h12;
+localparam MAX_GAME_SCORE = 7'd99;
 
 module Snake (
     input logic clk, rst_n,
@@ -98,12 +100,16 @@ module Snake (
     
     // Fruit
     logic [5:0] fruit_pos;
+    logic grow_posedge;
     PRNG fruit_gen (.clk(clk), .game_clk(game_clk), .rst_n(rst_n),
                     .snake_data(snake_data), .snake_valid(snake_valid),
-                    .grow(grow), .fruit_pos(fruit_pos));
+                    .grow(grow), .fruit_pos(fruit_pos), .grow_posedge(grow_posedge));
 
     // Scoring
-    logic [$clog2(MAX_SNAKE_SIZE) : 0] high_score, curr_score;
+    // Snake can continue to play after MAX_SNAKE_SIZE is reached, so score widths
+    // are wider than MAX_SNAKE_SIZE -> cap at 99 so it fits in 2 BCD digits lol
+    // these scores are BCD values {4 bits upper bcd digit, 4 bits lower bcd digit}
+    logic [7:0] high_score, curr_score;
     always_ff @(posedge clk, negedge rst_n) begin
         if(~rst_n) begin
             curr_score <= '0;
@@ -112,10 +118,20 @@ module Snake (
         else begin
             // died
             if(collision) begin
+                // update high score
+                high_score <= (curr_score > high_score) ? curr_score : high_score;
+                // reset current score cuz ded
                 curr_score <= '0;
             end
-            else if(grow) begin
-                curr_score <= curr_score + 1'b1;
+            // else if(grow_posedge) begin
+            else if(grow & game_clk) begin
+                if(curr_score == {4'd9, 4'd9}) begin
+                    curr_score <= curr_score;
+                end
+                else begin
+                    curr_score[3:0] <= (curr_score[3:0] == 4'd9) ? 4'd0 : (curr_score[3:0] + 1'b1);
+                    curr_score[7:4] <= (curr_score[3:0] == 4'd9) ? (curr_score[7:4] + 1'b1) : curr_score[7:4];
+                end
             end
         end
     end
@@ -124,10 +140,10 @@ module Snake (
     Color_Gameboard cgb(.snake_data(snake_data),
                         .snake_length(snake_length),
                         .snake_valid(snake_valid),
+                        .curr_score(curr_score),
+                        .high_score(high_score),
                         .fruit_pos(fruit_pos),
                         .row(row), .col(col), .is_snake(is_snake), .*);
-
-    // Overall Game Handling FSM
 
 endmodule : Snake
 
@@ -260,7 +276,12 @@ module Snake_Register (
             end
             // Only move the snake if a game has commenced
             else if(snake_enable) begin
-                snake_length <= grow ? snake_length + 1'b1 : snake_length;
+                if(snake_length == MAX_SNAKE_SIZE) begin
+                    snake_length <= snake_length;
+                end
+                else begin
+                    snake_length <= grow ? snake_length + 1'b1 : snake_length;
+                end
                 // Update tiles
                 for(int j = MAX_SNAKE_SIZE - 1; j > 0; j--) begin
                     snake_data[j] <= snake_data[j-1];
@@ -285,7 +306,8 @@ module PRNG (
     input logic [MAX_SNAKE_SIZE - 1:0][5:0] snake_data,
     input logic [MAX_SNAKE_SIZE - 1:0] snake_valid,
     input logic grow,
-    output logic [5:0] fruit_pos
+    output logic [5:0] fruit_pos,
+    output logic grow_posedge
 );
 
     logic valid_fruit, shift, get_new_pos, grow_prev, grow_posedge;
@@ -378,18 +400,133 @@ module LFSR_6_BIT(
 
 endmodule : LFSR_6_BIT
 
+module BCD_to_SS (
+    input logic [3:0] value,
+    output logic [6:0] ss_value
+);
+
+    always_comb begin
+        case (value)
+            4'h0: ss_value = 7'b1111110;
+            4'h1: ss_value = 7'b0110000;
+            4'h2: ss_value = 7'b1101101;
+            4'h3: ss_value = 7'b1111001;
+            4'h4: ss_value = 7'b0110011;
+            4'h5: ss_value = 7'b1011011;
+            4'h6: ss_value = 7'b1011111;
+            4'h7: ss_value = 7'b1110000;
+            4'h8: ss_value = 7'b1111111;
+            4'h9: ss_value = 7'b1111011;
+            default: ss_value = 7'b0000000;
+        endcase
+    end
+
+endmodule : BCD_to_SS
+
+module VGA_Segment_Check(
+    input logic [9:0] row, col,
+    input logic [9:0] x_offset,
+    output logic [6:0] ss_out
+);
+
+    logic left_lane, right_lane, middle_lane;
+    logic top_row, middle_row, bottom_row, top_half, bottom_half;
+    logic in_score_box;
+
+    logic [9:0] x_pos, y_pos;
+
+    assign x_pos = col - x_offset;
+    assign y_pos = row - 10'd144;
+
+    assign left_lane = (x_pos < 10'd8);
+    assign right_lane = (x_pos >= 10'd72) & (x_pos < 10'd80);
+    assign middle_lane = (x_pos >= 10'd8) & (x_pos < 10'd72);
+
+    assign top_row = (y_pos < 10'd8);
+    assign middle_row = (y_pos >= 10'd92) & (y_pos < 10'd100);
+    assign bottom_row = (y_pos >= 10'd184) & (y_pos < 10'd192);
+    assign top_half = (y_pos < 10'd100);
+    assign bottom_half = (y_pos >= 10'd92);
+
+    logic [6:0] ss_out_init;
+
+    // {a, b, c, d, e, f, g}
+    assign ss_out_init[6] = middle_lane & top_row;
+    assign ss_out_init[5] = right_lane & top_half;
+    assign ss_out_init[4] = right_lane & bottom_half;
+    assign ss_out_init[3] = middle_lane & bottom_row;
+    assign ss_out_init[2] = left_lane & bottom_half;
+    assign ss_out_init[1] = left_lane & top_half;
+    assign ss_out_init[0] = middle_lane & middle_row;
+
+    assign in_score_box = (row >= 10'd144) & (row < 10'd336) &
+                          (col >= x_offset) & (col < (x_offset + 10'd80));
+
+    assign ss_out = (in_score_box) ? ss_out_init : '0;
+
+endmodule : VGA_Segment_Check
+
+module Score_Color(
+    input logic [7:0] curr_score, high_score,
+    input logic [9:0] row, col,
+    output logic is_score
+);
+    localparam score_box_y_offset = 144; // 112 + 32
+    localparam curr_score_x_offset = 0;
+    localparam high_score_x_offset = 448;
+
+    // which segments we are supposed to display
+    logic [6:0] curr_ss_lsd, curr_ss_msd, high_ss_lsd, high_ss_msd;
+    // which segment are we in right now based on vga row/col
+    logic [6:0] disp_curr_ss_lsd, disp_curr_ss_msd, disp_high_ss_lsd, disp_high_ss_msd;
+
+    BCD_to_SS bts_curr_lsd (.value(curr_score[3:0]), .ss_value(curr_ss_lsd));
+    BCD_to_SS bts_curr_msd (.value(curr_score[7:4]), .ss_value(curr_ss_msd));
+    BCD_to_SS bts_high_lsd (.value(high_score[3:0]), .ss_value(high_ss_lsd));
+    BCD_to_SS bts_high_msd (.value(high_score[7:4]), .ss_value(high_ss_msd));
+
+    VGA_Segment_Check vsc_c_l (.row(row), .col(col), .x_offset(10'd552), .ss_out(disp_curr_ss_lsd));
+    VGA_Segment_Check vsc_c_m (.row(row), .col(col), .x_offset(10'd456), .ss_out(disp_curr_ss_msd));
+    VGA_Segment_Check vsc_h_l (.row(row), .col(col), .x_offset(10'd104), .ss_out(disp_high_ss_lsd));
+    VGA_Segment_Check vsc_h_m (.row(row), .col(col), .x_offset(10'd8), .ss_out(disp_high_ss_msd));
+
+    logic is_curr_score_lsd, is_curr_score_msd, is_high_score_lsd, is_high_score_msd;
+
+    assign is_curr_score_lsd = |(curr_ss_lsd & disp_curr_ss_lsd);
+    assign is_curr_score_msd = |(curr_ss_msd & disp_curr_ss_msd);
+    assign is_high_score_lsd = |(high_ss_lsd & disp_high_ss_lsd);
+    assign is_high_score_msd = |(high_ss_msd & disp_high_ss_msd);
+
+    logic is_curr_score, is_high_score;
+    assign is_curr_score = is_curr_score_lsd | is_curr_score_msd;
+    assign is_high_score = is_high_score_lsd | is_high_score_msd;
+
+    logic in_score_box;
+    assign is_score = (is_curr_score | is_high_score);
+
+endmodule : Score_Color
+
 
 // Handle all the coloring stuff for the gameboard (snake, fruit)
+// Also handle digit coloring while we're here
 module Color_Gameboard(
     input logic [MAX_SNAKE_SIZE - 1:0][5:0] snake_data,
     input logic [$clog2(MAX_SNAKE_SIZE):0] snake_length,
     input logic [5:0] fruit_pos,
     input logic [9:0] row, col,
+    input logic [7:0] curr_score, high_score,
     output logic [3:0] VGA_R, VGA_G, VGA_B,
     output logic is_snake,
     output logic [MAX_SNAKE_SIZE - 1:0] snake_valid
-    // output logic [3:0] debug_nc
 );
+
+    logic is_score;
+    logic [11:0] score_color;
+    Score_Color sc (.curr_score(curr_score), .high_score(high_score),
+                    .row(row), .col(col), .is_score(is_score));
+
+    assign score_color = (snake_length == MAX_SNAKE_SIZE) ? {4'hf, 4'h0, 4'hf} : {4'hf, 4'hf, 4'hf};
+
     logic [9:0] game_row, game_col;
     logic vga_in_grid;
 
@@ -466,6 +603,9 @@ module Color_Gameboard(
         if((game_row == 10'd0) | (game_row == 10'd256) | (game_col == 10'd0) | (game_col == 10'd256)) begin
             {VGA_R, VGA_G, VGA_B} = '1;
         end
+        else if(is_score) begin
+            {VGA_R, VGA_G, VGA_B} = score_color;
+        end
         else if(vga_in_grid) begin
             // just green snake for now
             if(display_snake) begin
@@ -483,3 +623,80 @@ module Color_Gameboard(
     end
 
 endmodule : Color_Gameboard
+
+// // Logic for getting the snake styles right (color is handled in Color_Gameboard
+// // still, this is just for deciding between snake body color vs. black background)
+// module Snake_Tiles(
+//     input logic [9:0] game_row, game_col,
+//     input logic [2:0] tile_row, tile_col,
+//     output logic RGB_UP_RIGHT, RGB_UP_LEFT, RGB_DOWN_RIGHT, RGB_DOWN_LEFT,
+//                  RGB_UP_TAIL, RGB_LEFT_TAIL, RGB_RIGHT_TAIL, RGB_DOWN_TAIL,
+//                  RGB_UP_HEAD, RGB_LEFT_HEAD, RGB_RIGHT_HEAD, RGB_DOWN_HEAD,
+//                  RGB_UP_DOWN, RGB_LEFT_RIGHT
+// );
+
+//     logic [5:0] pixel_row, pixel_col;
+
+//     // map global grid coordinate to just one tile's pixels
+//     // (pixel_row, pixel_col) is in [0, MAX_SNAKE_SIZE - 1] x [0, MAX_SNAKE_SIZE - 1]
+//     assign pixel_row = game_row - (tile_row << 10'd5);
+//     assign pixel_col = game_col - (tile_col << 10'd5);
+
+//     logic row_in_center, col_in_center;
+//     assign row_in_center = (6'd4 <= pixel_row) & (pixel_row <= 6'd27);
+//     assign col_in_center = (6'd4 <= pixel_col) & (pixel_col <= 6'd27);
+
+//     logic row_in_top, row_in_bottom, col_in_left, col_in_right;
+//     assign row_in_top = (pixel_row <= 6'd3);
+//     assign row_in_bottom = (6'd28 <= pixel_row) & (pixel_row <= 6'd31);
+//     assign col_in_left = (pixel_col <= 6'd3);
+//     assign col_in_right = (6'd28 <= pixel_col) & (pixel_col <= 6'd31);
+//     // most snake tiles have the middle 48x48 pixels filled with snake (except
+//     // head cuz of the eyes)
+//     logic center_square;
+//     assign center_square = row_in_center & col_in_center;
+
+//     logic top_seg, bottom_seg, left_seg, right_seg;
+//     assign top_seg = (row_in_top & col_in_center);
+//     assign bottom_seg = (row_in_bottom & col_in_center);
+//     assign left_seg = (col_in_left & row_in_center);
+//     assign right_seg = (col_in_right & row_in_center);
+
+//     logic top_eye_lane, bottom_eye_lane, left_eye_lane, right_eye_lane;
+//     assign top_eye_lane = (pixel_row >= 6'd8) & (pixel_row <= 6'd11);
+//     assign bottom_eye_lane = (pixel_row >= 6'd20) & (pixel_row <= 6'd23);
+//     assign left_eye_lane = (pixel_col >= 6'd8) & (pixel_col <= 6'd11);
+//     assign right_eye_lane = (pixel_col >= 6'd20) & (pixel_col <= 6'd23);
+
+//     logic top_left_eye, top_right_eye, bottom_left_eye, bottom_right_eye;
+//     assign top_left_eye = top_eye_lane & left_eye_lane;
+//     assign top_right_eye = top_eye_lane & right_eye_lane;
+//     assign bottom_left_eye = bottom_eye_lane & left_eye_lane;
+//     assign bottom_right_eye = bottom_eye_lane & right_eye_lane;
+
+//     logic up_head_eyes, left_head_eyes, right_head_eyes, down_head_eyes;
+//     assign up_head_eyes = (bottom_left_eye | bottom_right_eye);
+//     assign left_head_eyes = (top_right_eye | bottom_right_eye);
+//     assign right_head_eyes = (top_left_eye | bottom_left_eye);
+//     assign down_head_eyes = (top_left_eye | top_right_eye);
+
+
+//     assign RGB_UP_RIGHT   = center_square | top_seg | right_seg;
+//     assign RGB_UP_LEFT    = center_square | top_seg | left_seg;
+//     assign RGB_DOWN_RIGHT = center_square | bottom_seg | right_seg;
+//     assign RGB_DOWN_LEFT  = center_square | bottom_seg | left_seg;
+
+//     assign RGB_UP_TAIL    = center_square | top_seg;
+//     assign RGB_LEFT_TAIL  = center_square | left_seg;
+//     assign RGB_RIGHT_TAIL = center_square | right_seg;
+//     assign RGB_DOWN_TAIL  = center_square | bottom_seg;
+
+//     assign RGB_UP_HEAD    = top_seg | (center_square & ~up_head_eyes);
+//     assign RGB_LEFT_HEAD  = left_seg | (center_square & ~left_head_eyes);
+//     assign RGB_RIGHT_HEAD = right_seg | (center_square & ~right_head_eyes);
+//     assign RGB_DOWN_HEAD  = bottom_seg | (center_square & ~down_head_eyes);
+
+//     assign RGB_UP_DOWN    = center_square | top_seg | bottom_seg;
+//     assign RGB_LEFT_RIGHT = center_square | left_seg | right_seg;
+
+// endmodule : Snake_Tiles
