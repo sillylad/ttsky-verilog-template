@@ -11,8 +11,7 @@ typedef enum logic [3:0]   {UP_RIGHT, UP_LEFT, DOWN_RIGHT, DOWN_LEFT,
 
 typedef enum logic [1:0] {MOVE_UP, MOVE_LEFT, MOVE_RIGHT, MOVE_DOWN} snake_move;
 
-localparam MAX_SNAKE_SIZE = 12;
-localparam MAX_SNAKE_SIZE_BCD = 8'h12;
+localparam MAX_SNAKE_SIZE = 32;
 localparam MAX_GAME_SCORE = 7'd99;
 
 module Snake (
