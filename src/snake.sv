@@ -25,7 +25,6 @@ module Snake (
     output logic [$clog2(MAX_SNAKE_SIZE) : 0] snake_length,
     output logic [5:0] head_pos,
     output logic is_snake,
-    output logic [3:0] debug_nc
 );
     // snake is moving always so dir should be sticky
     logic [3:0] sticky_dir;
@@ -54,7 +53,6 @@ module Snake (
     logic [MAX_SNAKE_SIZE - 1:0] snake_valid;
     logic snake_init, grow, snake_enable, collision;
     logic [5:0] new_head;
-    assign debug_nc = {snake_enable, (snake_init & game_clk), (start_game & game_clk), 1'b0};
 
     enum logic [1:0] {IDLE, MOVING, DEAD} curr_state;
     
@@ -99,10 +97,9 @@ module Snake (
     
     // Fruit
     logic [5:0] fruit_pos;
-    logic grow_posedge;
     PRNG fruit_gen (.clk(clk), .game_clk(game_clk), .rst_n(rst_n),
                     .snake_data(snake_data), .snake_valid(snake_valid),
-                    .grow(grow), .fruit_pos(fruit_pos));
+                    .grow(grow), .snake_init(snake_init), .fruit_pos(fruit_pos));
 
     // Scoring
     // Snake can continue to play after MAX_SNAKE_SIZE is reached, so score widths
@@ -122,7 +119,6 @@ module Snake (
                 // reset current score cuz ded
                 curr_score <= '0;
             end
-            // else if(grow_posedge) begin
             else if(grow & game_clk) begin
                 if(curr_score == {4'd9, 4'd9}) begin
                     curr_score <= curr_score;
@@ -304,11 +300,11 @@ module PRNG (
     input logic game_clk,
     input logic [MAX_SNAKE_SIZE - 1:0][5:0] snake_data,
     input logic [MAX_SNAKE_SIZE - 1:0] snake_valid,
-    input logic grow,
+    input logic grow, snake_init,
     output logic [5:0] fruit_pos
 );
 
-    logic valid_fruit, shift, get_new_pos, grow_prev, grow_posedge;
+    logic valid_fruit, shift, get_new_pos, grow_prev;
 
     always_ff @(posedge clk, negedge rst_n) begin
         if(~rst_n) begin
@@ -319,7 +315,6 @@ module PRNG (
         end
     end
 
-    assign grow_posedge = grow & ~grow_prev;
 
     logic [MAX_SNAKE_SIZE - 1:0] fruit_on_snake;
 
@@ -336,11 +331,11 @@ module PRNG (
             get_new_pos <= 1'b0;
         end
         // trigger new fruit position search
-        else if(grow_posedge) begin
+        else if((grow & game_clk)) begin
             get_new_pos <= 1'b1;
         end
         // stop searching when you found a valid fruit
-        else if(valid_fruit & game_clk & get_new_pos) begin
+        else if(valid_fruit /*& game_clk*/ & get_new_pos) begin
             get_new_pos <= 1'b0;
         end
     end
@@ -350,8 +345,12 @@ module PRNG (
         if(~rst_n) begin
             fruit_pos <= {3'd3, 3'd6};
         end
+        // make sure fruit isn't on top of the snake when snake respawns in center
+        else if(snake_init & game_clk) begin
+            fruit_pos <= {3'd3, 3'd6};
+        end
         // update visible fruit on game clock only (high for 1 clock only)
-        else if(game_clk & valid_fruit & get_new_pos) begin
+        else if(/*game_clk &*/ valid_fruit & get_new_pos) begin
             fruit_pos <= lfsr_out;
         end
     end
