@@ -11,7 +11,7 @@ typedef enum logic [3:0]   {UP_RIGHT, UP_LEFT, DOWN_RIGHT, DOWN_LEFT,
 
 typedef enum logic [1:0] {MOVE_UP, MOVE_LEFT, MOVE_RIGHT, MOVE_DOWN} snake_move;
 
-localparam MAX_SNAKE_SIZE = 16;
+localparam MAX_SNAKE_SIZE = 32;
 localparam MAX_GAME_SCORE = 8'h99;
 
 module Snake (
@@ -256,17 +256,47 @@ module Snake_Register (
     assign wall_collision = (|wall_collision_all) & snake_enable;
 
 
-    logic [MAX_SNAKE_SIZE - 1:0] head_on_snake;
-    genvar i;
-    generate
-        for(i = 0; i < MAX_SNAKE_SIZE; i++) begin
-            assign head_on_snake[i] =  (snake_data[i][5:3] == new_head[5:3]) & 
-                                        (snake_data[i][2:0] == new_head[2:0]) & 
-                                        (snake_valid[i]);
-        end
-    endgenerate
+    // logic [MAX_SNAKE_SIZE - 1:0] head_on_snake;
+    // genvar i;
+    // generate
+    //     for(i = 0; i < MAX_SNAKE_SIZE; i++) begin
+    //         assign head_on_snake[i] =  (snake_data[i][5:3] == new_head[5:3]) & 
+    //                                     (snake_data[i][2:0] == new_head[2:0]) & 
+    //                                     (snake_valid[i]);
+    //     end
+    // endgenerate
 
-    assign self_collision = (|head_on_snake) & snake_enable;
+
+    // Sequential self-collision scan cuz we out of space
+    logic [$clog2(MAX_SNAKE_SIZE) - 1 : 0] check_idx;
+    logic self_collision_found;
+
+    always_ff @(posedge clk, negedge rst_n) begin
+        if(~rst_n) begin
+            check_idx <= '0;
+            self_collision_found <= 1'b0;
+        end
+        // reset check positions and stuff since a new game period has started
+        else if(game_clk) begin
+            check_idx <= '0;
+            self_collision_found <= 1'b0;
+        end
+        // spin on the FAST clock to do the check
+        else begin
+            // not at end of snake yet, keep incrementing
+            if(check_idx != ($clog2(MAX_SNAKE_SIZE)'(MAX_SNAKE_SIZE - 1))) begin
+                check_idx <= check_idx + 1'b1;
+            end
+            if(snake_data[check_idx][5:3] == new_head[5:3] &
+               snake_data[check_idx][2:0] == new_head[2:0] &
+               snake_valid[check_idx]) begin
+                self_collision_found <= 1'b1;
+            end
+        end
+    end
+
+    // assign self_collision = (|head_on_snake) & snake_enable;
+    assign self_collision = self_collision_found & snake_enable;
 
     assign collision = wall_collision | self_collision;
     // assign collision = 1'b0;
