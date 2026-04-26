@@ -425,20 +425,20 @@ module BCD_to_SS (
 endmodule : BCD_to_SS
 
 module VGA_Segment_Check(
-    input logic [9:0] x_offset, col,
+    input logic [3:0] x_pos,
     input logic top_row, middle_row, bottom_row, top_half, bottom_half, in_box,
     output logic [6:0] ss_out
 );
 
     logic left_lane, right_lane, middle_lane;
 
-    logic [9:0] x_pos;
+    // logic [9:0] x_pos;
 
-    assign x_pos = col - x_offset;
+    // assign x_pos = col - x_offset;
 
-    assign left_lane = (x_pos < 10'd8);
-    assign right_lane = (x_pos >= 10'd72) & (x_pos < 10'd80);
-    assign middle_lane = (x_pos >= 10'd8) & (x_pos < 10'd72);
+    assign left_lane = (x_pos < 4'd1);
+    assign right_lane = (x_pos >= 4'd9) & (x_pos < 4'd10);
+    assign middle_lane = (x_pos >= 4'd1) & (x_pos < 4'd9);
     
     logic [6:0] ss_out_init;
 
@@ -471,26 +471,46 @@ module Score_Color(
     BCD_to_SS bts_high_msd (.value(high_score[7:4]), .ss_value(high_ss_msd));
 
     logic top_row, middle_row, bottom_row, top_half, bottom_half, in_score_box_row;
-    logic [9:0] y_pos;
-    assign y_pos = row - 10'd144;
-    assign top_row = (y_pos < 10'd8);
-    assign middle_row = (y_pos >= 10'd92) & (y_pos < 10'd100);
-    assign bottom_row = (y_pos >= 10'd184) & (y_pos < 10'd192);
-    assign top_half = (y_pos < 10'd100);
-    assign bottom_half = (y_pos >= 10'd92);
-    assign in_score_box_row = (row >= 10'd144) & (row < 10'd336);
+    // logic [9:0] y_pos;
+    // assign y_pos = row - 10'd144;
+    // assign top_row = (y_pos < 10'd8);
+    // assign middle_row = (y_pos >= 10'd92) & (y_pos < 10'd100);
+    // assign bottom_row = (y_pos >= 10'd184) & (y_pos < 10'd192);
+    // assign top_half = (y_pos < 10'd100);
+    // assign bottom_half = (y_pos >= 10'd92);
+    // assign in_score_box_row = (row >= 10'd144) & (row < 10'd336);
+
+    logic [4:0] y_pos;
+    assign y_pos = row[9:3] - 5'd18;
+    assign top_row = (y_pos == 5'd0);
+    assign middle_row = (y_pos >= 5'd11) & (y_pos < 5'd13);
+    assign bottom_row = (y_pos >= 5'd23) & (y_pos < 5'd24);
+    assign top_half = (y_pos < 5'd13);
+    assign bottom_half = (y_pos >= 5'd11);
+    assign in_score_box_row = (row[9:3] >= 7'd18) & (row[9:3] < 7'd42);
 
     logic in_box_c_l, in_box_c_m, in_box_h_l, in_box_h_m;
 
-    assign in_box_c_l = (col >= 10'd552) & (col < 10'd632);
-    assign in_box_c_m = (col >= 10'd456) & (col < 10'd536);
-    assign in_box_h_l = (col >= 10'd104) & (col < 10'd184);
-    assign in_box_h_m = (col >= 10'd8)   & (col < 10'd88);
+    assign in_box_c_l = (col[9:3] >= 7'd69) & (col[9:3] < 7'd79);
+    assign in_box_c_m = (col[9:3] >= 7'd57) & (col[9:3] < 7'd67);
+    assign in_box_h_l = (col[9:3] >= 7'd13) & (col[9:3] < 7'd23);
+    assign in_box_h_m = (col[9:3] >= 7'd1)  & (col[9:3] < 7'd11);
 
-    VGA_Segment_Check vsc_c_l (.col(col), .x_offset(10'd552), .ss_out(disp_curr_ss_lsd), .in_box(in_box_c_l), .*);
-    VGA_Segment_Check vsc_c_m (.col(col), .x_offset(10'd456), .ss_out(disp_curr_ss_msd), .in_box(in_box_c_m), .*);
-    VGA_Segment_Check vsc_h_l (.col(col), .x_offset(10'd104), .ss_out(disp_high_ss_lsd), .in_box(in_box_h_l), .*);
-    VGA_Segment_Check vsc_h_m (.col(col), .x_offset(10'd8), .ss_out(disp_high_ss_msd), .in_box(in_box_h_m), .*);
+    logic [3:0] x_pos_c_l, x_pos_c_m, x_pos_h_l, x_pos_h_m;
+    assign x_pos_c_l = col[9:3] - 7'd69;
+    assign x_pos_c_m = col[9:3] - 7'd57;
+    assign x_pos_h_l = col[9:3] - 7'd13;
+    assign x_pos_h_m = col[9:3] - 7'd1;
+
+    VGA_Segment_Check vsc_c_l (.x_pos(x_pos_c_l), .ss_out(disp_curr_ss_lsd), .in_box(in_box_c_l), .*);
+    VGA_Segment_Check vsc_c_m (.x_pos(x_pos_c_m), .ss_out(disp_curr_ss_msd), .in_box(in_box_c_m), .*);
+    VGA_Segment_Check vsc_h_l (.x_pos(x_pos_h_l), .ss_out(disp_high_ss_lsd), .in_box(in_box_h_l), .*);
+    VGA_Segment_Check vsc_h_m (.x_pos(x_pos_h_m), .ss_out(disp_high_ss_msd), .in_box(in_box_h_m), .*);
+
+    // VGA_Segment_Check vsc_c_l (.col(col), .x_offset(10'd552), .ss_out(disp_curr_ss_lsd), .in_box(in_box_c_l), .*);
+    // VGA_Segment_Check vsc_c_m (.col(col), .x_offset(10'd456), .ss_out(disp_curr_ss_msd), .in_box(in_box_c_m), .*);
+    // VGA_Segment_Check vsc_h_l (.col(col), .x_offset(10'd104), .ss_out(disp_high_ss_lsd), .in_box(in_box_h_l), .*);
+    // VGA_Segment_Check vsc_h_m (.col(col), .x_offset(10'd8), .ss_out(disp_high_ss_msd), .in_box(in_box_h_m), .*);
 
     logic is_curr_score_lsd, is_curr_score_msd, is_high_score_lsd, is_high_score_msd;
 
