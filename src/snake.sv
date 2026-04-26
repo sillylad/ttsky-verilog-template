@@ -423,7 +423,7 @@ endmodule : BCD_to_SS
 module VGA_Segment_Check(
     input logic [9:0] row, col,
     input logic [9:0] x_offset,
-    input logic top_row, middle_row, bottom_row, top_half, bottom_half,
+    input logic top_row, middle_row, bottom_row, top_half, bottom_half, in_score_box_row,
     output logic [6:0] ss_out
 );
 
@@ -440,12 +440,6 @@ module VGA_Segment_Check(
     assign right_lane = (x_pos >= 10'd72) & (x_pos < 10'd80);
     assign middle_lane = (x_pos >= 10'd8) & (x_pos < 10'd72);
 
-    // assign top_row = (y_pos < 10'd8);
-    // assign middle_row = (y_pos >= 10'd92) & (y_pos < 10'd100);
-    // assign bottom_row = (y_pos >= 10'd184) & (y_pos < 10'd192);
-    // assign top_half = (y_pos < 10'd100);
-    // assign bottom_half = (y_pos >= 10'd92);
-
     logic [6:0] ss_out_init;
 
     // {a, b, c, d, e, f, g}
@@ -457,7 +451,7 @@ module VGA_Segment_Check(
     assign ss_out_init[1] = left_lane & top_half;
     assign ss_out_init[0] = middle_lane & middle_row;
 
-    assign in_score_box = (row >= 10'd144) & (row < 10'd336) &
+    assign in_score_box = (in_score_box_row) &
                           (col >= x_offset) & (col < (x_offset + 10'd80));
 
     assign ss_out = (in_score_box) ? ss_out_init : '0;
@@ -483,7 +477,7 @@ module Score_Color(
     BCD_to_SS bts_high_lsd (.value(high_score[3:0]), .ss_value(high_ss_lsd));
     BCD_to_SS bts_high_msd (.value(high_score[7:4]), .ss_value(high_ss_msd));
 
-    logic top_row, middle_row, bottom_row, top_half, bottom_half;
+    logic top_row, middle_row, bottom_row, top_half, bottom_half, in_score_box_row;
     logic [9:0] y_pos;
     assign y_pos = row - 10'd144;
     assign top_row = (y_pos < 10'd8);
@@ -491,6 +485,7 @@ module Score_Color(
     assign bottom_row = (y_pos >= 10'd184) & (y_pos < 10'd192);
     assign top_half = (y_pos < 10'd100);
     assign bottom_half = (y_pos >= 10'd92);
+    assign in_score_box_row = (row >= 10'd144) & (row < 10'd336);
 
     VGA_Segment_Check vsc_c_l (.row(row), .col(col), .x_offset(10'd552), .ss_out(disp_curr_ss_lsd), .*);
     VGA_Segment_Check vsc_c_m (.row(row), .col(col), .x_offset(10'd456), .ss_out(disp_curr_ss_msd), .*);
