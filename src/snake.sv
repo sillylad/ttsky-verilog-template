@@ -476,10 +476,10 @@ module Score_Color(
 
     logic in_box_c_l, in_box_c_m, in_box_h_l, in_box_h_m;
 
-    assign in_box_c_l = in_score_box_row & (col >= 10'd552) & (col < 10'd632);
-    assign in_box_c_m = in_score_box_row & (col >= 10'd456) & (col < 10'd536);
-    assign in_box_h_l = in_score_box_row & (col >= 10'd104) & (col < 10'd184);
-    assign in_box_h_m = in_score_box_row & (col >= 10'd8)   & (col < 10'd88);
+    assign in_box_c_l = (col >= 10'd552) & (col < 10'd632);
+    assign in_box_c_m = (col >= 10'd456) & (col < 10'd536);
+    assign in_box_h_l = (col >= 10'd104) & (col < 10'd184);
+    assign in_box_h_m = (col >= 10'd8)   & (col < 10'd88);
 
     VGA_Segment_Check vsc_c_l (.row(row), .col(col), .x_offset(10'd552), .ss_out(disp_curr_ss_lsd), .in_box(in_box_c_l), .*);
     VGA_Segment_Check vsc_c_m (.row(row), .col(col), .x_offset(10'd456), .ss_out(disp_curr_ss_msd), .in_box(in_box_c_m), .*);
@@ -497,7 +497,7 @@ module Score_Color(
     assign is_curr_score = is_curr_score_lsd | is_curr_score_msd;
     assign is_high_score = is_high_score_lsd | is_high_score_msd;
 
-    assign is_score = (is_curr_score | is_high_score);
+    assign is_score = (in_score_box_row) & (is_curr_score | is_high_score);
 
 endmodule : Score_Color
 
