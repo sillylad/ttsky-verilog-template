@@ -3,8 +3,7 @@
 module ChipInterface (
     input logic clk,
     input logic [6:0] btn,
-    output logic R0, R1, G0, G1, B0, B1, VGA_HS, VGA_VS,
-    output logic [7:0] led
+    output logic R0, R1, G0, G1, B0, B1, VGA_HS, VGA_VS
 );
 
     // synchronize buttons
@@ -62,7 +61,5 @@ module ChipInterface (
 
     assign rgb = {VGA_R[1:0], VGA_G[1:0], VGA_B[1:0]};
     assign {R1, R0, G1, G0, B1, B0} = (~blank) ? rgb : '0;
-
-    assign led = '0;
 
 endmodule : ChipInterface

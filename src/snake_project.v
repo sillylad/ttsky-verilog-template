@@ -17,20 +17,16 @@ module tt_um_example_sillylad (
 );
 
   // All output pins must be assigned. If not used, assign to 0.
-  // assign uio_out[7:1] = '0;
-  assign uio_oe  = '1;
+  assign uio_out[7:1] = '0;
+  assign uio_oe  = '0;
 
   // List all unused inputs to prevent warnings
   wire _unused = &{ena, clk, rst_n, 1'b0};
-
-//   RangeFinder rf (.data_in(ui_in), .clock(clk), .reset(rst_n),
-//                   .go(uio_in[0]), .finish(uio_in[1]), .range(uo_out),
-//                   .error(uio_out[0]));
 
 ChipInterface ci (.clk(clk), .btn({ui_in[7:1], rst_n}),
                   .R0(uo_out[7]), .R1(uo_out[6]),
                   .G0(uo_out[5]), .G1(uo_out[4]),
                   .B0(uo_out[3]), .B1(uo_out[2]),
-                  .VGA_HS(uo_out[1]), .VGA_VS(uo_out[0]), .led(uio_out));
+                  .VGA_HS(uo_out[1]), .VGA_VS(uo_out[0]));
 
 endmodule

@@ -353,9 +353,8 @@ module PRNG (
     logic [MAX_SNAKE_SIZE - 1:0] fruit_on_snake;
 
     // spin lfsr on faster clock so it can resolve in time
-    logic [5:0] seed, lfsr_out;
-    assign seed = 6'b1;
-    LFSR_6_BIT lfsr(.clk(clk), .rst_n(rst_n), .shift(shift), .seed(seed),
+    logic [5:0] lfsr_out;
+    LFSR_6_BIT lfsr(.clk(clk), .rst_n(rst_n), .shift(shift),
                     .lfsr_out(lfsr_out));
 
     assign shift = ~valid_fruit & get_new_pos;
@@ -407,14 +406,13 @@ endmodule : PRNG
 
 module LFSR_6_BIT(
     input logic clk, rst_n, shift,
-    input logic [5:0] seed,
     output logic [5:0] lfsr_out
 );
 
     always_ff @(posedge clk, negedge rst_n) begin
         if(~rst_n) begin
             // reset lfsr to seed, but make sure seed isn't 0 else lfsr will lock
-            lfsr_out <= (seed == '0) ? 6'b1 : seed;
+            lfsr_out <= 6'b1;
         end
         else if(shift) begin
             lfsr_out[5] <= lfsr_out[0];
