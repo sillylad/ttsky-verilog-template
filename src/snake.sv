@@ -27,7 +27,7 @@ module Snake (
     logic [$clog2(MAX_SNAKE_SIZE) : 0] snake_length;
     snake_move curr_dir;
 
-    // snake is moving always so dir should be sticky
+    // // snake is moving always so dir should be sticky
     // logic [3:0] sticky_dir;
     // always_ff @(posedge clk, negedge rst_n) begin
     //     if(~rst_n) begin
@@ -327,10 +327,10 @@ module Snake_Register (
                 snake_data[0] <= new_head;
             end
         end
-        else begin
-            snake_data <= snake_data;
-            snake_length <= snake_length;
-        end
+        // else begin
+        //     snake_data <= snake_data;
+        //     snake_length <= snake_length;
+        // end
     end
     
 
@@ -424,9 +424,9 @@ module LFSR_6_BIT(
             lfsr_out[1] <= lfsr_out[2] ^ lfsr_out[0];
             lfsr_out[0] <= lfsr_out[1];
         end
-        else begin
-            lfsr_out <= lfsr_out;
-        end
+        // else begin
+        //     lfsr_out <= lfsr_out;
+        // end
     end
 
 endmodule : LFSR_6_BIT
