@@ -428,7 +428,7 @@ module VGA_Segment_Check(
 
     assign left_lane = (x_pos < 10'd8);
     assign right_lane = (x_pos >= 10'd72) & (x_pos < 10'd80);
-    assign middle_lane = (x_pos >= 10'd8) & (x_pos < 10'd72);
+    assign middle_lane = (x_pos < 10'd80);
 
     logic [6:0] ss_out_init;
 
@@ -470,8 +470,8 @@ module Score_Color(
     assign top_row = (y_pos < 10'd8);
     assign middle_row = (y_pos >= 10'd92) & (y_pos < 10'd100);
     assign bottom_row = (y_pos >= 10'd184) & (y_pos < 10'd192);
-    assign top_half = (y_pos < 10'd100);
-    assign bottom_half = (y_pos >= 10'd92);
+    assign top_half = (y_pos < 10'd96);
+    assign bottom_half = (y_pos >= 10'd96);
     assign in_score_box_row = (row >= 10'd144) & (row < 10'd336);
 
     logic in_box_c_l, in_box_c_m, in_box_h_l, in_box_h_m;
