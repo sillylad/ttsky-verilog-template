@@ -11,7 +11,7 @@ typedef enum logic [3:0]   {UP_RIGHT, UP_LEFT, DOWN_RIGHT, DOWN_LEFT,
 
 typedef enum logic [1:0] {MOVE_UP, MOVE_LEFT, MOVE_RIGHT, MOVE_DOWN} snake_move;
 
-localparam MAX_SNAKE_SIZE = 32;
+localparam MAX_SNAKE_SIZE = 30;
 localparam MAX_GAME_SCORE = 8'h99;
 
 module Snake (
@@ -436,9 +436,9 @@ module VGA_Segment_Check(
 
     // assign x_pos = col - x_offset;
 
-    assign left_lane = (x_pos < 4'd1);
-    assign right_lane = (x_pos >= 4'd9) & (x_pos < 4'd10);
-    assign middle_lane = (x_pos >= 4'd1) & (x_pos < 4'd9);
+    assign left_lane = (x_pos == 4'd0);
+    assign right_lane = (x_pos == 4'd9);
+    assign middle_lane = ~left_lane & ~right_lane & in_box;
     
     logic [6:0] ss_out_init;
 
@@ -481,7 +481,7 @@ module Score_Color(
     // assign in_score_box_row = (row >= 10'd144) & (row < 10'd336);
 
     logic [4:0] y_pos;
-    assign y_pos = row[9:3] - 5'd18;
+    assign y_pos = row[9:3] - 7'd18;
     assign top_row = (y_pos == 5'd0);
     assign middle_row = (y_pos >= 5'd11) & (y_pos < 5'd13);
     assign bottom_row = (y_pos >= 5'd23) & (y_pos < 5'd24);
@@ -489,7 +489,7 @@ module Score_Color(
     assign bottom_half = (y_pos >= 5'd11);
     assign in_score_box_row = (row[9:3] >= 7'd18) & (row[9:3] < 7'd42);
 
-    logic in_box_c_l, in_box_c_m, in_box_h_l, in_box_h_m;
+    logic  in_box_c_l, in_box_c_m, in_box_h_l, in_box_h_m;
 
     assign in_box_c_l = (col[9:3] >= 7'd69) & (col[9:3] < 7'd79);
     assign in_box_c_m = (col[9:3] >= 7'd57) & (col[9:3] < 7'd67);
