@@ -3,11 +3,11 @@
 // Snake tile style - convention is the direction in the name is the side
 // where the snake tile connects to another tile
 // e.g. LEFT_RIGHT is just a horizontal piece
-typedef enum logic [3:0]   {UP_RIGHT, UP_LEFT, DOWN_RIGHT, DOWN_LEFT,
-                            UP_TAIL, LEFT_TAIL, RIGHT_TAIL, DOWN_TAIL,
-                            UP_HEAD, LEFT_HEAD, RIGHT_HEAD, DOWN_HEAD,
-                            UP_DOWN, LEFT_RIGHT,
-                            EMPTY} snake_style_t;
+// typedef enum logic [3:0]   {UP_RIGHT, UP_LEFT, DOWN_RIGHT, DOWN_LEFT,
+//                             UP_TAIL, LEFT_TAIL, RIGHT_TAIL, DOWN_TAIL,
+//                             UP_HEAD, LEFT_HEAD, RIGHT_HEAD, DOWN_HEAD,
+//                             UP_DOWN, LEFT_RIGHT,
+//                             EMPTY} snake_style_t;
 
 typedef enum logic [1:0] {MOVE_UP, MOVE_LEFT, MOVE_RIGHT, MOVE_DOWN} snake_move;
 
