@@ -115,7 +115,9 @@ module Snake (
             // died
             if(collision) begin
                 // update high score
-                high_score <= (curr_score > high_score) ? curr_score : high_score;
+                if(curr_score > high_score) begin
+                    high_score <= curr_score; 
+                end
                 // reset current score cuz ded
                 curr_score <= '0;
             end
@@ -304,16 +306,7 @@ module PRNG (
     output logic [5:0] fruit_pos
 );
 
-    logic valid_fruit, shift, get_new_pos, grow_prev;
-
-    always_ff @(posedge clk, negedge rst_n) begin
-        if(~rst_n) begin
-            grow_prev <= 1'b0;
-        end
-        else begin
-            grow_prev <= grow;
-        end
-    end
+    logic valid_fruit, shift, get_new_pos;
 
 
     logic [MAX_SNAKE_SIZE - 1:0] fruit_on_snake;
@@ -423,16 +416,13 @@ endmodule : BCD_to_SS
 module VGA_Segment_Check(
     input logic [9:0] row, col,
     input logic [9:0] x_offset,
-    input logic top_row, middle_row, bottom_row, top_half, bottom_half, in_score_box_row,
+    input logic top_row, middle_row, bottom_row, top_half, bottom_half, in_box,
     output logic [6:0] ss_out
 );
 
     logic left_lane, right_lane, middle_lane;
-    // logic top_row, middle_row, bottom_row, top_half, bottom_half;
-    logic in_score_box;
 
     logic [9:0] x_pos;
-    // logic [9:0] y_pos;
 
     assign x_pos = col - x_offset;
 
@@ -451,10 +441,7 @@ module VGA_Segment_Check(
     assign ss_out_init[1] = left_lane & top_half;
     assign ss_out_init[0] = middle_lane & middle_row;
 
-    assign in_score_box = (in_score_box_row) &
-                          (col >= x_offset) & (col < (x_offset + 10'd80));
-
-    assign ss_out = (in_score_box) ? ss_out_init : '0;
+    assign ss_out = (in_box) ? ss_out_init : '0;
 
 endmodule : VGA_Segment_Check
 
@@ -487,10 +474,17 @@ module Score_Color(
     assign bottom_half = (y_pos >= 10'd92);
     assign in_score_box_row = (row >= 10'd144) & (row < 10'd336);
 
-    VGA_Segment_Check vsc_c_l (.row(row), .col(col), .x_offset(10'd552), .ss_out(disp_curr_ss_lsd), .*);
-    VGA_Segment_Check vsc_c_m (.row(row), .col(col), .x_offset(10'd456), .ss_out(disp_curr_ss_msd), .*);
-    VGA_Segment_Check vsc_h_l (.row(row), .col(col), .x_offset(10'd104), .ss_out(disp_high_ss_lsd), .*);
-    VGA_Segment_Check vsc_h_m (.row(row), .col(col), .x_offset(10'd8), .ss_out(disp_high_ss_msd), .*);
+    logic in_box_c_l, in_box_c_m, in_box_h_l, in_box_h_m;
+
+    assign in_box_c_l = in_score_box_row & (col >= 10'd552) & (col < 10'd632);
+    assign in_box_c_m = in_score_box_row & (col >= 10'd456) & (col < 10'd536);
+    assign in_box_h_l = in_score_box_row & (col >= 10'd104) & (col < 10'd184);
+    assign in_box_h_m = in_score_box_row & (col >= 10'd8)   & (col < 10'd88);
+
+    VGA_Segment_Check vsc_c_l (.row(row), .col(col), .x_offset(10'd552), .ss_out(disp_curr_ss_lsd), .in_box(in_box_c_l), .*);
+    VGA_Segment_Check vsc_c_m (.row(row), .col(col), .x_offset(10'd456), .ss_out(disp_curr_ss_msd), .in_box(in_box_c_m), .*);
+    VGA_Segment_Check vsc_h_l (.row(row), .col(col), .x_offset(10'd104), .ss_out(disp_high_ss_lsd), .in_box(in_box_h_l), .*);
+    VGA_Segment_Check vsc_h_m (.row(row), .col(col), .x_offset(10'd8), .ss_out(disp_high_ss_msd), .in_box(in_box_h_m), .*);
 
     logic is_curr_score_lsd, is_curr_score_msd, is_high_score_lsd, is_high_score_msd;
 
@@ -503,7 +497,6 @@ module Score_Color(
     assign is_curr_score = is_curr_score_lsd | is_curr_score_msd;
     assign is_high_score = is_high_score_lsd | is_high_score_msd;
 
-    logic in_score_box;
     assign is_score = (is_curr_score | is_high_score);
 
 endmodule : Score_Color
