@@ -3,9 +3,10 @@
 module ChipInterface (
     input logic clk,
     input logic [6:0] btn,
-    output logic R0, R1, G0, G1, B0, B1, VGA_HS, VGA_VS
+    output logic R0, R1, G0, G1, B0, B1, VGA_HS, VGA_VS,
+    output logic [7:0] led
 );
-
+    assign led = '0;
     // synchronize buttons
     logic tmp_btn, rst_n;
     logic [3:0] tmp_dir, dir;
