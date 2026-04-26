@@ -12,7 +12,7 @@ typedef enum logic [3:0]   {UP_RIGHT, UP_LEFT, DOWN_RIGHT, DOWN_LEFT,
 typedef enum logic [1:0] {MOVE_UP, MOVE_LEFT, MOVE_RIGHT, MOVE_DOWN} snake_move;
 
 localparam MAX_SNAKE_SIZE = 32;
-localparam MAX_GAME_SCORE = 7'd99;
+localparam MAX_GAME_SCORE = 8'h99;
 
 module Snake (
     input logic clk, rst_n,
@@ -20,12 +20,13 @@ module Snake (
     input logic start_game,
     input logic [3:0] dir,
     input logic [9:0] row, col,
-    output logic [3:0] VGA_R, VGA_G, VGA_B,
-    output snake_move curr_dir,
-    output logic [$clog2(MAX_SNAKE_SIZE) : 0] snake_length,
-    output logic [5:0] head_pos,
-    output logic is_snake,
+    output logic [3:0] VGA_R, VGA_G, VGA_B
 );
+    logic is_snake;
+    logic [5:0] head_pos;
+    logic [$clog2(MAX_SNAKE_SIZE) : 0] snake_length;
+    snake_move curr_dir;
+
     // snake is moving always so dir should be sticky
     logic [3:0] sticky_dir;
     always_ff @(posedge clk, negedge rst_n) begin
@@ -77,6 +78,11 @@ module Snake (
                 DEAD: begin
                     curr_state <= (snake_init & game_clk) ? IDLE : DEAD;
                     snake_init <= (snake_init & game_clk) ? 1'b0 : 1'b1;
+                    snake_enable <= 1'b0;
+                end
+                default: begin
+                    curr_state <= IDLE;
+                    snake_init <= 1'b0;
                     snake_enable <= 1'b0;
                 end
             endcase
@@ -419,8 +425,7 @@ module BCD_to_SS (
 endmodule : BCD_to_SS
 
 module VGA_Segment_Check(
-    input logic [9:0] row, col,
-    input logic [9:0] x_offset,
+    input logic [9:0] x_offset, col,
     input logic top_row, middle_row, bottom_row, top_half, bottom_half, in_box,
     output logic [6:0] ss_out
 );
@@ -455,10 +460,6 @@ module Score_Color(
     input logic [9:0] row, col,
     output logic is_score
 );
-    localparam score_box_y_offset = 144; // 112 + 32
-    localparam curr_score_x_offset = 0;
-    localparam high_score_x_offset = 448;
-
     // which segments we are supposed to display
     logic [6:0] curr_ss_lsd, curr_ss_msd, high_ss_lsd, high_ss_msd;
     // which segment are we in right now based on vga row/col
@@ -486,10 +487,10 @@ module Score_Color(
     assign in_box_h_l = (col >= 10'd104) & (col < 10'd184);
     assign in_box_h_m = (col >= 10'd8)   & (col < 10'd88);
 
-    VGA_Segment_Check vsc_c_l (.row(row), .col(col), .x_offset(10'd552), .ss_out(disp_curr_ss_lsd), .in_box(in_box_c_l), .*);
-    VGA_Segment_Check vsc_c_m (.row(row), .col(col), .x_offset(10'd456), .ss_out(disp_curr_ss_msd), .in_box(in_box_c_m), .*);
-    VGA_Segment_Check vsc_h_l (.row(row), .col(col), .x_offset(10'd104), .ss_out(disp_high_ss_lsd), .in_box(in_box_h_l), .*);
-    VGA_Segment_Check vsc_h_m (.row(row), .col(col), .x_offset(10'd8), .ss_out(disp_high_ss_msd), .in_box(in_box_h_m), .*);
+    VGA_Segment_Check vsc_c_l (.col(col), .x_offset(10'd552), .ss_out(disp_curr_ss_lsd), .in_box(in_box_c_l), .*);
+    VGA_Segment_Check vsc_c_m (.col(col), .x_offset(10'd456), .ss_out(disp_curr_ss_msd), .in_box(in_box_c_m), .*);
+    VGA_Segment_Check vsc_h_l (.col(col), .x_offset(10'd104), .ss_out(disp_high_ss_lsd), .in_box(in_box_h_l), .*);
+    VGA_Segment_Check vsc_h_m (.col(col), .x_offset(10'd8), .ss_out(disp_high_ss_msd), .in_box(in_box_h_m), .*);
 
     logic is_curr_score_lsd, is_curr_score_msd, is_high_score_lsd, is_high_score_msd;
 

@@ -50,7 +50,7 @@ module ChipInterface (
         end
     end
 
-    assign game_clk = clk_60HZ & (frame_cnt == 5'd0);
+    assign game_clk = clk_60HZ & (frame_cnt == 3'd0);
 
 
     // Module handling all the snake game logic and coloring
