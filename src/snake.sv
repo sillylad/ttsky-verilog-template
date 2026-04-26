@@ -11,7 +11,7 @@ typedef enum logic [3:0]   {UP_RIGHT, UP_LEFT, DOWN_RIGHT, DOWN_LEFT,
 
 typedef enum logic [1:0] {MOVE_UP, MOVE_LEFT, MOVE_RIGHT, MOVE_DOWN} snake_move;
 
-localparam MAX_SNAKE_SIZE = 20;
+localparam MAX_SNAKE_SIZE = 24;
 localparam MAX_GAME_SCORE = 8'h99;
 
 module Snake (
@@ -28,26 +28,26 @@ module Snake (
     snake_move curr_dir;
 
     // snake is moving always so dir should be sticky
-    logic [3:0] sticky_dir;
-    always_ff @(posedge clk, negedge rst_n) begin
-        if(~rst_n) begin
-            sticky_dir <= 4'b1000; // move right
-        end
-        // also reset dir when ded
-        else if(collision) begin
-            sticky_dir <= 4'b1000;
-        end
-        else begin
-            // only update sticky_dir if at least one button is pressed
-            if(dir) begin
-                sticky_dir <= dir;
-            end
-            // no button pressed so hold old set of buttons
-            else begin
-                sticky_dir <= sticky_dir;
-            end
-        end
-    end
+    // logic [3:0] sticky_dir;
+    // always_ff @(posedge clk, negedge rst_n) begin
+    //     if(~rst_n) begin
+    //         sticky_dir <= 4'b1000; // move right
+    //     end
+    //     // also reset dir when ded
+    //     else if(collision) begin
+    //         sticky_dir <= 4'b1000;
+    //     end
+    //     else begin
+    //         // only update sticky_dir if at least one button is pressed
+    //         if(dir) begin
+    //             sticky_dir <= dir;
+    //         end
+    //         // no button pressed so hold old set of buttons
+    //         else begin
+    //             sticky_dir <= sticky_dir;
+    //         end
+    //     end
+    // end
 
     // MAX_SNAKE_SIZE-element shift register for snake motion tracking
     logic [MAX_SNAKE_SIZE - 1:0][5:0] snake_data;
@@ -95,7 +95,7 @@ module Snake (
     // Output snake_data array for use by other blocks
     Snake_Register sreg (.clk(clk), .rst_n(rst_n), .game_clk(game_clk),
                     .snake_enable(snake_enable), .snake_init(snake_init),
-                    .dir(sticky_dir), .grow(grow),
+                    .dir(dir), .grow(grow),
                     .snake_data(snake_data), .snake_length(snake_length), .snake_valid(snake_valid),
                     .new_head(new_head), .curr_dir(curr_dir), .collision(collision));
 
