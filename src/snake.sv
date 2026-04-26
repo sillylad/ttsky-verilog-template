@@ -237,10 +237,15 @@ module Snake_Register (
     logic [3:0] wall_collision_all;
 
     // hit the top
-    assign wall_collision_all[0] = (curr_dir == MOVE_UP) & (snake_data[0][5:3] == 3'd0) & (new_head[5:3] == 3'd7);
-    assign wall_collision_all[1] = (curr_dir == MOVE_DOWN) & (snake_data[0][5:3] == 3'd7) & (new_head[5:3] == 3'd0);
-    assign wall_collision_all[2] = (curr_dir == MOVE_LEFT) & (snake_data[0][2:0] == 3'd0) & (new_head[2:0] == 3'd7);
-    assign wall_collision_all[3] = (curr_dir == MOVE_RIGHT) & (snake_data[0][2:0] == 3'd7) & (new_head[2:0] == 3'd0);
+    // assign wall_collision_all[0] = (curr_dir == MOVE_UP) & (snake_data[0][5:3] == 3'd0) & (new_head[5:3] == 3'd7);
+    // assign wall_collision_all[1] = (curr_dir == MOVE_DOWN) & (snake_data[0][5:3] == 3'd7) & (new_head[5:3] == 3'd0);
+    // assign wall_collision_all[2] = (curr_dir == MOVE_LEFT) & (snake_data[0][2:0] == 3'd0) & (new_head[2:0] == 3'd7);
+    // assign wall_collision_all[3] = (curr_dir == MOVE_RIGHT) & (snake_data[0][2:0] == 3'd7) & (new_head[2:0] == 3'd0);
+
+    assign wall_collision_all[0] = (curr_dir == MOVE_UP) & (new_head[5:3] == 3'd7);
+    assign wall_collision_all[1] = (curr_dir == MOVE_DOWN) & (new_head[5:3] == 3'd0);
+    assign wall_collision_all[2] = (curr_dir == MOVE_LEFT) & (new_head[2:0] == 3'd7);
+    assign wall_collision_all[3] = (curr_dir == MOVE_RIGHT) & (new_head[2:0] == 3'd0);
 
     assign wall_collision = (|wall_collision_all) & snake_enable;
 
@@ -428,8 +433,8 @@ module VGA_Segment_Check(
 
     assign left_lane = (x_pos < 10'd8);
     assign right_lane = (x_pos >= 10'd72) & (x_pos < 10'd80);
-    assign middle_lane = (x_pos < 10'd80);
-
+    assign middle_lane = (x_pos >= 10'd8) & (x_pos < 10'd72);
+    
     logic [6:0] ss_out_init;
 
     // {a, b, c, d, e, f, g}
@@ -470,8 +475,8 @@ module Score_Color(
     assign top_row = (y_pos < 10'd8);
     assign middle_row = (y_pos >= 10'd92) & (y_pos < 10'd100);
     assign bottom_row = (y_pos >= 10'd184) & (y_pos < 10'd192);
-    assign top_half = (y_pos < 10'd96);
-    assign bottom_half = (y_pos >= 10'd96);
+    assign top_half = (y_pos < 10'd100);
+    assign bottom_half = (y_pos >= 10'd92);
     assign in_score_box_row = (row >= 10'd144) & (row < 10'd336);
 
     logic in_box_c_l, in_box_c_m, in_box_h_l, in_box_h_m;
