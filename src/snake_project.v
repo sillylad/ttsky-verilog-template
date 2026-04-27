@@ -23,10 +23,6 @@ module tt_um_example_sillylad (
   // List all unused inputs to prevent warnings
   wire _unused = &{ena, clk, rst_n, 1'b0};
 
-//   RangeFinder rf (.data_in(ui_in), .clock(clk), .reset(rst_n),
-//                   .go(uio_in[0]), .finish(uio_in[1]), .range(uo_out),
-//                   .error(uio_out[0]));
-
 ChipInterface ci (.clk(clk), .btn({ui_in[7:1], rst_n}),
                   .R0(uo_out[7]), .R1(uo_out[6]),
                   .G0(uo_out[5]), .G1(uo_out[4]),
