@@ -77,4 +77,3 @@ module ChipInterface (
     assign {R1, R0, G1, G0, B1, B0} = (~blank) ? rgb : '0;
 
 endmodule : ChipInterface
-v
