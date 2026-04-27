@@ -3,8 +3,10 @@
 module ChipInterface (
     input logic clk,
     input logic [6:0] btn,
-    output logic R0, R1, G0, G1, B0, B1, VGA_HS, VGA_VS
+    output logic R0, R1, G0, G1, B0, B1, VGA_HS, VGA_VS,
+    output logic [7:0] led
 );
+    assign led = '0;
 
     // synchronize buttons
     logic tmp_btn, rst_n;
@@ -34,15 +36,15 @@ module ChipInterface (
                     .blank(blank), .row(row), .col(col), .game_clk(clk_60HZ));
 
                 
-    // divide 60hz game clock by 12 so it's not so ZOOMIN'
-    // 200ms/tile, slower than Google snake game since Google board is bigger
-    logic [3:0] frame_cnt;
+    // divide 60hz game clock by 9 so it's not so ZOOMIN'
+    // 150ms/tile, slower than Google snake game since Google board is bigger
+    logic [2:0] frame_cnt;
     always_ff @(posedge clk, negedge rst_n) begin
         if(~rst_n) begin
             frame_cnt <= '0;
         end
         else if(clk_60HZ) begin
-            frame_cnt <= (frame_cnt == 4'd12) ? '0 : frame_cnt + 1'b1;
+            frame_cnt <= frame_cnt + 1'b1;
         end
         else begin
             frame_cnt <= frame_cnt;
