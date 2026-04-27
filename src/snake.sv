@@ -204,7 +204,7 @@ module Snake_Register (
             fast_dir <= MOVE_RIGHT;
         end
         else begin
-            fast_dir <= decoded_dir;
+            fast_dir <= (snake_enable) ? decoded_dir : fast_dir;
         end
     end
 
@@ -243,28 +243,15 @@ module Snake_Register (
     logic [3:0] wall_collision_all;
 
     // hit the top
-    // assign wall_collision_all[0] = (curr_dir == MOVE_UP) & (snake_data[0][5:3] == 3'd0) & (new_head[5:3] == 3'd7);
-    // assign wall_collision_all[1] = (curr_dir == MOVE_DOWN) & (snake_data[0][5:3] == 3'd7) & (new_head[5:3] == 3'd0);
-    // assign wall_collision_all[2] = (curr_dir == MOVE_LEFT) & (snake_data[0][2:0] == 3'd0) & (new_head[2:0] == 3'd7);
-    // assign wall_collision_all[3] = (curr_dir == MOVE_RIGHT) & (snake_data[0][2:0] == 3'd7) & (new_head[2:0] == 3'd0);
-
     assign wall_collision_all[0] = (curr_dir == MOVE_UP) & (new_head[5:3] == 3'd7);
+    // hit the bottom
     assign wall_collision_all[1] = (curr_dir == MOVE_DOWN) & (new_head[5:3] == 3'd0);
+    // hit the left side
     assign wall_collision_all[2] = (curr_dir == MOVE_LEFT) & (new_head[2:0] == 3'd7);
+    // hit the right side
     assign wall_collision_all[3] = (curr_dir == MOVE_RIGHT) & (new_head[2:0] == 3'd0);
 
     assign wall_collision = (|wall_collision_all) & snake_enable;
-
-
-    // logic [MAX_SNAKE_SIZE - 1:0] head_on_snake;
-    // genvar i;
-    // generate
-    //     for(i = 0; i < MAX_SNAKE_SIZE; i++) begin
-    //         assign head_on_snake[i] =  (snake_data[i][5:3] == new_head[5:3]) & 
-    //                                     (snake_data[i][2:0] == new_head[2:0]) & 
-    //                                     (snake_valid[i]);
-    //     end
-    // endgenerate
 
 
     // Sequential self-collision scan cuz we out of space
@@ -327,10 +314,10 @@ module Snake_Register (
                 snake_data[0] <= new_head;
             end
         end
-        // else begin
-        //     snake_data <= snake_data;
-        //     snake_length <= snake_length;
-        // end
+        else begin
+            snake_data <= snake_data;
+            snake_length <= snake_length;
+        end
     end
     
 
@@ -368,7 +355,7 @@ module PRNG (
             get_new_pos <= 1'b1;
         end
         // stop searching when you found a valid fruit
-        else if(valid_fruit /*& game_clk*/ & get_new_pos) begin
+        else if(valid_fruit & get_new_pos) begin
             get_new_pos <= 1'b0;
         end
     end
@@ -383,7 +370,7 @@ module PRNG (
             fruit_pos <= {3'd3, 3'd6};
         end
         // update visible fruit on game clock only (high for 1 clock only)
-        else if(/*game_clk &*/ valid_fruit & get_new_pos) begin
+        else if(valid_fruit & get_new_pos) begin
             fruit_pos <= lfsr_out;
         end
     end
@@ -422,9 +409,9 @@ module LFSR_6_BIT(
             lfsr_out[1] <= lfsr_out[2] ^ lfsr_out[0];
             lfsr_out[0] <= lfsr_out[1];
         end
-        // else begin
-        //     lfsr_out <= lfsr_out;
-        // end
+        else begin
+            lfsr_out <= lfsr_out;
+        end
     end
 
 endmodule : LFSR_6_BIT
