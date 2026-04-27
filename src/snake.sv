@@ -203,8 +203,11 @@ module Snake_Register (
         if(~rst_n) begin
             fast_dir <= MOVE_RIGHT;
         end
-        else begin
-            fast_dir <= (snake_enable) ? decoded_dir : fast_dir;
+        else if(snake_init) begin
+            fast_dir <= MOVE_RIGHT;
+        end
+        else if(snake_enable) begin
+            fast_dir <= decoded_dir;
         end
     end
 
