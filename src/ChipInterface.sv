@@ -10,7 +10,7 @@ module ChipInterface (
 
     // synchronize buttons
     logic tmp_btn, rst_n;
-    logic [3:0] tmp_dir, dir;
+    logic [3:0] tmp_dir, dir, sync_dir;
     logic tmp_start_game, start_game;
 
     always_ff @(posedge clk) begin
@@ -18,11 +18,23 @@ module ChipInterface (
         rst_n <= tmp_btn;
 
         tmp_dir <= btn[6:3];
-        dir <= tmp_dir;
+        sync_dir <= tmp_dir;
 
         tmp_start_game <= btn[1];
         start_game <= tmp_start_game;
     end 
+
+    always_ff @(posedge clk, negedge rst_n) begin
+        if(~rst_n) begin
+            dir <= 1'b0;
+        end
+        else if(game_clk) begin
+            dir <= sync_dir;
+        end
+        else if(sync_dir) begin
+            dir <= sync_dir;
+        end
+    end
 
     // VGA for driving display
     logic [9:0] col;
@@ -65,3 +77,4 @@ module ChipInterface (
     assign {R1, R0, G1, G0, B1, B0} = (~blank) ? rgb : '0;
 
 endmodule : ChipInterface
+v
