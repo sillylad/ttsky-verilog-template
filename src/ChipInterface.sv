@@ -8,7 +8,7 @@ module ChipInterface (
 );
     assign led = '0;
 
-    // synchronize buttons
+    // synchronize all input buttons w/2 FFs
     logic tmp_btn, rst_n;
     logic [3:0] tmp_dir, dir, sync_dir;
     logic tmp_start_game, start_game;
@@ -24,6 +24,8 @@ module ChipInterface (
         start_game <= tmp_start_game;
     end 
 
+    // Pulse stretch the dir buttons so button presses aren't missed by the
+    // slower game_clk
     always_ff @(posedge clk, negedge rst_n) begin
         if(~rst_n) begin
             dir <= 1'b0;
@@ -36,7 +38,7 @@ module ChipInterface (
         end
     end
 
-    // VGA for driving display
+    // VGA signals for driving display
     logic [9:0] col;
     logic [9:0] row;
     logic [3:0] VGA_R, VGA_G, VGA_B;
@@ -44,12 +46,12 @@ module ChipInterface (
     logic game_clk, clk_60HZ;
 
     // Drive VGA timing signals
-    vga vga_800_600 (.clk(clk), .rst_n(rst_n), .HS(VGA_HS), .VS(VGA_VS),
+    vga vga_640_480 (.clk(clk), .rst_n(rst_n), .HS(VGA_HS), .VS(VGA_VS),
                     .blank(blank), .row(row), .col(col), .game_clk(clk_60HZ));
 
                 
-    // divide 60hz game clock by 9 so it's not so ZOOMIN'
-    // 150ms/tile, slower than Google snake game since Google board is bigger
+    // divide 60hz game clock by 8 so it's not so ZOOMIN'
+    // 133ms/tile, similar to Google snake game for reference
     logic [2:0] frame_cnt;
     always_ff @(posedge clk, negedge rst_n) begin
         if(~rst_n) begin
@@ -72,7 +74,8 @@ module ChipInterface (
                 .row(row), .col(col), .VGA_R(VGA_R), .VGA_G(VGA_G), .VGA_B(VGA_B));
 
     logic [5:0] rgb;
-
+    
+    // blank out the RGB pins in non-display periods
     assign rgb = {VGA_R[1:0], VGA_G[1:0], VGA_B[1:0]};
     assign {R1, R0, G1, G0, B1, B0} = (~blank) ? rgb : '0;
 

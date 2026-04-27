@@ -1,14 +1,5 @@
 `default_nettype none
 
-// Snake tile style - convention is the direction in the name is the side
-// where the snake tile connects to another tile
-// e.g. LEFT_RIGHT is just a horizontal piece
-// typedef enum logic [3:0]   {UP_RIGHT, UP_LEFT, DOWN_RIGHT, DOWN_LEFT,
-//                             UP_TAIL, LEFT_TAIL, RIGHT_TAIL, DOWN_TAIL,
-//                             UP_HEAD, LEFT_HEAD, RIGHT_HEAD, DOWN_HEAD,
-//                             UP_DOWN, LEFT_RIGHT,
-//                             EMPTY} snake_style_t;
-
 typedef enum logic [1:0] {MOVE_UP, MOVE_LEFT, MOVE_RIGHT, MOVE_DOWN} snake_move;
 
 localparam MAX_SNAKE_SIZE = 20;
@@ -25,29 +16,6 @@ module Snake (
     logic is_snake;
     logic [5:0] head_pos;
     logic [$clog2(MAX_SNAKE_SIZE) : 0] snake_length;
-    snake_move curr_dir;
-
-    // // snake is moving always so dir should be sticky
-    // logic [3:0] sticky_dir;
-    // always_ff @(posedge clk, negedge rst_n) begin
-    //     if(~rst_n) begin
-    //         sticky_dir <= 4'b1000; // move right
-    //     end
-    //     // also reset dir when ded
-    //     else if(collision) begin
-    //         sticky_dir <= 4'b1000;
-    //     end
-    //     else begin
-    //         // only update sticky_dir if at least one button is pressed
-    //         if(dir) begin
-    //             sticky_dir <= dir;
-    //         end
-    //         // no button pressed so hold old set of buttons
-    //         else begin
-    //             sticky_dir <= sticky_dir;
-    //         end
-    //     end
-    // end
 
     // MAX_SNAKE_SIZE-element shift register for snake motion tracking
     logic [MAX_SNAKE_SIZE - 1:0][5:0] snake_data;
@@ -90,14 +58,19 @@ module Snake (
     end
 
     assign grow = (new_head == fruit_pos);
-    // collision when new_head wraps around the board one way or another
+
     // Stores the current snake data and updates the snake position as needed
     // Output snake_data array for use by other blocks
     Snake_Register sreg (.clk(clk), .rst_n(rst_n), .game_clk(game_clk),
-                    .snake_enable(snake_enable), .snake_init(snake_init),
-                    .dir(dir), .grow(grow),
-                    .snake_data(snake_data), .snake_length(snake_length), .snake_valid(snake_valid),
-                    .new_head(new_head), .curr_dir(curr_dir), .collision(collision));
+                    .snake_enable(snake_enable),
+                    .snake_init(snake_init),
+                    .dir(dir),
+                    .grow(grow),
+                    .snake_data(snake_data),
+                    .snake_length(snake_length),
+                    .snake_valid(snake_valid),
+                    .new_head(new_head),
+                    .collision(collision));
 
     assign head_pos = snake_data[0]; // pull out of snake_register for debug
     
@@ -161,11 +134,10 @@ module Snake_Register (
     output logic [MAX_SNAKE_SIZE - 1:0][5:0] snake_data, // shift register values
     output logic [$clog2(MAX_SNAKE_SIZE) : 0] snake_length,
     output logic [5:0] new_head,
-    output logic collision,
-    output snake_move curr_dir
+    output logic collision
 );
 
-    snake_move decoded_dir, fast_dir;
+    snake_move decoded_dir, fast_dir, curr_dir;
     logic wall_collision, self_collision;
 
     // Have a button priority for simplicity, in case multiple are pressed
@@ -285,11 +257,10 @@ module Snake_Register (
         end
     end
 
-    // assign self_collision = (|head_on_snake) & snake_enable;
     assign self_collision = self_collision_found & snake_enable;
 
     assign collision = wall_collision | self_collision;
-    // assign collision = 1'b0;
+
     // Update snake register
     always_ff @(posedge clk, negedge rst_n) begin
         // reset snake in the middle of the board
@@ -327,7 +298,8 @@ module Snake_Register (
 endmodule : Snake_Register
 
 // 6-bit PRNG
-// Generate "random" value between 0 -> MAX_SNAKE_SIZE - 1 (MAX_SNAKE_SIZE tiles) to get next fruit pos
+// Generate "random" value between 0 -> 63 to get next fruit pos somewhere on
+// the board (8x8 = 64 possible tiles)
 module PRNG (
     input logic clk, rst_n,
     input logic game_clk,
@@ -342,7 +314,7 @@ module PRNG (
 
     logic [MAX_SNAKE_SIZE - 1:0] fruit_on_snake;
 
-    // spin lfsr on faster clock so it can resolve in time
+    // spin lfsr on faster clock so it can resolve in time for next game_clk
     logic [5:0] lfsr_out;
     LFSR_6_BIT lfsr(.clk(clk), .rst_n(rst_n), .shift(shift),
                     .lfsr_out(lfsr_out));
@@ -357,7 +329,7 @@ module PRNG (
         else if((grow & game_clk)) begin
             get_new_pos <= 1'b1;
         end
-        // stop searching when you found a valid fruit
+        // stop searching when valid fruit is found
         else if(valid_fruit & get_new_pos) begin
             get_new_pos <= 1'b0;
         end
@@ -379,6 +351,7 @@ module PRNG (
     end
 
     // check if the proposed fruit tile is on top of the snake
+    // parallel combinational search since lfsr may take many more attempts to resolve
     genvar i;
     generate
         for(i = 0; i < MAX_SNAKE_SIZE; i++) begin
@@ -394,6 +367,7 @@ module PRNG (
 
 endmodule : PRNG
 
+// LFSR to generate sequence of pseudorandom 6-bit numbers
 module LFSR_6_BIT(
     input logic clk, rst_n, shift,
     output logic [5:0] lfsr_out
@@ -419,6 +393,8 @@ module LFSR_6_BIT(
 
 endmodule : LFSR_6_BIT
 
+
+// Convert 4-bit BCD to seven-segment code
 module BCD_to_SS (
     input logic [3:0] value,
     output logic [6:0] ss_value
@@ -442,6 +418,7 @@ module BCD_to_SS (
 
 endmodule : BCD_to_SS
 
+// check which of the seven segments the VGA row and col are on
 module VGA_Segment_Check(
     input logic [3:0] x_pos,
     input logic top_row, middle_row, bottom_row, top_half, bottom_half, in_box,
@@ -449,10 +426,6 @@ module VGA_Segment_Check(
 );
 
     logic left_lane, right_lane, middle_lane;
-
-    // logic [9:0] x_pos;
-
-    // assign x_pos = col - x_offset;
 
     assign left_lane = (x_pos == 4'd0);
     assign right_lane = (x_pos == 4'd9);
@@ -473,31 +446,29 @@ module VGA_Segment_Check(
 
 endmodule : VGA_Segment_Check
 
+// Display the high score (left) and current game score (right) on the VGA
 module Score_Color(
     input logic [7:0] curr_score, high_score,
     input logic [9:0] row, col,
     output logic is_score
 );
-    // which segments we are supposed to display
+    // which segments we are supposed to display based on the score number
     logic [6:0] curr_ss_lsd, curr_ss_msd, high_ss_lsd, high_ss_msd;
+    
     // which segment are we in right now based on vga row/col
     logic [6:0] disp_curr_ss_lsd, disp_curr_ss_msd, disp_high_ss_lsd, disp_high_ss_msd;
 
+    // convert scores to seven-segment encoding
     BCD_to_SS bts_curr_lsd (.value(curr_score[3:0]), .ss_value(curr_ss_lsd));
     BCD_to_SS bts_curr_msd (.value(curr_score[7:4]), .ss_value(curr_ss_msd));
     BCD_to_SS bts_high_lsd (.value(high_score[3:0]), .ss_value(high_ss_lsd));
     BCD_to_SS bts_high_msd (.value(high_score[7:4]), .ss_value(high_ss_msd));
 
+    // shared row-checking signals across the 4 different digits being displayed
+    // (2 for curr, 2 for high)
     logic top_row, middle_row, bottom_row, top_half, bottom_half, in_score_box_row;
-    // logic [9:0] y_pos;
-    // assign y_pos = row - 10'd144;
-    // assign top_row = (y_pos < 10'd8);
-    // assign middle_row = (y_pos >= 10'd92) & (y_pos < 10'd100);
-    // assign bottom_row = (y_pos >= 10'd184) & (y_pos < 10'd192);
-    // assign top_half = (y_pos < 10'd100);
-    // assign bottom_half = (y_pos >= 10'd92);
-    // assign in_score_box_row = (row >= 10'd144) & (row < 10'd336);
 
+    // convert to tiles instead of raw pixels to make arithmetic smaller
     logic [4:0] y_pos;
     assign y_pos = row[9:3] - 7'd18;
     assign top_row = (y_pos == 5'd0);
@@ -507,6 +478,7 @@ module Score_Color(
     assign bottom_half = (y_pos >= 5'd11);
     assign in_score_box_row = (row[9:3] >= 7'd18) & (row[9:3] < 7'd42);
 
+    // check if vga is in the corresponding digit's box region
     logic  in_box_c_l, in_box_c_m, in_box_h_l, in_box_h_m;
 
     assign in_box_c_l = (col[9:3] >= 7'd69) & (col[9:3] < 7'd79);
@@ -514,6 +486,7 @@ module Score_Color(
     assign in_box_h_l = (col[9:3] >= 7'd13) & (col[9:3] < 7'd23);
     assign in_box_h_m = (col[9:3] >= 7'd1)  & (col[9:3] < 7'd11);
 
+    // x-offset for each digit's box region
     logic [3:0] x_pos_c_l, x_pos_c_m, x_pos_h_l, x_pos_h_m;
     assign x_pos_c_l = col[9:3] - 7'd69;
     assign x_pos_c_m = col[9:3] - 7'd57;
@@ -525,11 +498,8 @@ module Score_Color(
     VGA_Segment_Check vsc_h_l (.x_pos(x_pos_h_l), .ss_out(disp_high_ss_lsd), .in_box(in_box_h_l), .*);
     VGA_Segment_Check vsc_h_m (.x_pos(x_pos_h_m), .ss_out(disp_high_ss_msd), .in_box(in_box_h_m), .*);
 
-    // VGA_Segment_Check vsc_c_l (.col(col), .x_offset(10'd552), .ss_out(disp_curr_ss_lsd), .in_box(in_box_c_l), .*);
-    // VGA_Segment_Check vsc_c_m (.col(col), .x_offset(10'd456), .ss_out(disp_curr_ss_msd), .in_box(in_box_c_m), .*);
-    // VGA_Segment_Check vsc_h_l (.col(col), .x_offset(10'd104), .ss_out(disp_high_ss_lsd), .in_box(in_box_h_l), .*);
-    // VGA_Segment_Check vsc_h_m (.col(col), .x_offset(10'd8), .ss_out(disp_high_ss_msd), .in_box(in_box_h_m), .*);
-
+    // signal indicating if a digit is being displayed or not -- supposed to display
+    // a segment based on score & in the corresponding segment based on vga row/col
     logic is_curr_score_lsd, is_curr_score_msd, is_high_score_lsd, is_high_score_msd;
 
     assign is_curr_score_lsd = |(curr_ss_lsd & disp_curr_ss_lsd);
@@ -541,13 +511,14 @@ module Score_Color(
     assign is_curr_score = is_curr_score_lsd | is_curr_score_msd;
     assign is_high_score = is_high_score_lsd | is_high_score_msd;
 
+    // make sure in the right y-range too so numbers don't wrap around lol
     assign is_score = (in_score_box_row) & (is_curr_score | is_high_score);
 
 endmodule : Score_Color
 
 
-// Handle all the coloring stuff for the gameboard (snake, fruit)
-// Also handle digit coloring while we're here
+// Handle all the coloring stuff for the main gameboard (snake, fruit)
+// Also handle score digit coloring while we're here
 module Color_Gameboard(
     input logic [MAX_SNAKE_SIZE - 1:0][5:0] snake_data,
     input logic [$clog2(MAX_SNAKE_SIZE):0] snake_length,
@@ -598,6 +569,7 @@ module Color_Gameboard(
     assign display_snake = |in_snake;
 
     // convert one-hot in_snake to index to find which snake tile number is being displayed
+    // for use in the rainbow coloring
     logic [$clog2(MAX_SNAKE_SIZE) - 1:0] curr_snake_idx;
     always_comb begin
         curr_snake_idx = '0;
@@ -608,11 +580,13 @@ module Color_Gameboard(
         end
     end
 
+    // check if current vga tile is on fruit's location
     logic display_fruit;
     assign display_fruit = (tile_row == fruit_pos[5:3]) && (tile_col == fruit_pos[2:0]);
 
     logic [11:0] snake_color, fruit_color;
-    
+
+    // RAINBOWWWW
     logic [5:0][11:0] colors;
     assign colors[0] = {4'hf, 4'h0, 4'h0}; // red 
     assign colors[1] = {4'hf, 4'h2, 4'h0}; // orange
@@ -624,7 +598,7 @@ module Color_Gameboard(
 
     // make sure MAX_SNAKE_SIZE <= 32
     logic [4:0] res24, res12, res6;
-    // subtract tree to do % 6
+    // subtract tree to do curr_snake_idx % 6
     always_comb begin
         res24 = (curr_snake_idx >= 5'd24) ? curr_snake_idx - 5'd24 : curr_snake_idx;
         res12 = (res24 >= 5'd12) ? res24 - 5'd12 : res24;
@@ -632,8 +606,9 @@ module Color_Gameboard(
     end
 
     assign snake_color = colors[res6[2:0]];
-    assign fruit_color = {4'hf, 4'hf, 4'hf}; // SNAKE EATS EGG
+    assign fruit_color = {4'hf, 4'hf, 4'hf}; // SNAKE EATS (WHITE) EGG
 
+    // Pick which color based on what's located at the current tile
     always_comb begin
         // default black background
         {VGA_R, VGA_G, VGA_B} = '0;
